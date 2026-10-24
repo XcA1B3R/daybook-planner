@@ -2,6 +2,13 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v1.3 · 2026-10-23
+
+- Weeks now start on Sunday on every page: year, month, week, family, habit tracker and the workout charts.
+- Week and family entries saved under the old Monday-start weeks move automatically to the matching days.
+- New **Customize › Reset planner** erases all entries. You confirm by typing RESET, and you can choose to keep your theme, cover, logo, title and Google Calendar connection.
+- The Home greeting now uses the name from a title like "Dean's Daybook" ("Good morning, Dean").
+
 ## v1.2 · 2026-10-23
 
 - Upload your own logo in Customize › Logo (PNG, JPG, SVG or WebP). It's resized automatically and appears in the top left, on the cover and as the browser tab icon. "Use the default logo" switches back.

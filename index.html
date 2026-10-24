@@ -111,6 +111,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 .logoprev img,.logoprev svg{width:56px;height:56px;object-fit:contain;display:block}
 label.btn{display:inline-block;cursor:pointer}
 .hint.err{color:var(--bad)}
+.rz{border:1.5px solid var(--bad);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;background:color-mix(in srgb, var(--bad) 7%, var(--paper))}
+.rz p{margin:0;font-size:14px}
+.rz label.row{font-size:14px;align-items:flex-start}
+.rz #rz-type{font:600 16px var(--mono);letter-spacing:.1em}
+.dangerbtn{border:1px solid var(--bad);background:var(--bad);color:var(--paper);border-radius:999px;padding:8px 16px;font-weight:600;font-size:14px}
+.dangerbtn:disabled{opacity:.4;cursor:not-allowed}
 .clogo{width:64px;height:64px;object-fit:contain;display:block;margin:0 auto 10px}
 .yearsw{display:flex;align-items:center;gap:4px}
 .yearsw span{font:24px/1 var(--serif);min-width:3ch;text-align:center;font-variant-numeric:tabular-nums}
@@ -608,8 +614,8 @@ a.ev:hover{background:color-mix(in srgb, var(--ec, var(--accent)) 28%, var(--pap
 "use strict";
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const MON3 = MONTHS.map(m => m.slice(0,3));
-const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const DOWL = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const DOWL = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const TABS = [["home","Home",6],["year","Year",1],["month","Month",2],["week","Week",3],["day","Day",4],["goals","Goals & Habits",5],["budget","Budget",6],["fitness","Fitness",7],["family","Family",2],["notes","Work Notes",8]];
 const MONTH_COLORS = [1,2,3,4,5,6,7,8,1,2,3,4];
 const EXP_CATS = ["Housing","Utilities","Groceries","Dining out","Gas & auto","Insurance","Phone & internet","Debt payments","Health","Subscriptions","Personal","Gifts","Savings","Other"];
@@ -636,8 +642,11 @@ const mk = (y,m) => `${y}-${pad(m+1)}`;
 const parseYmd = s => { const [a,b,c] = s.split("-").map(Number); return new Date(a,b-1,c); };
 const dim = (y,m) => new Date(y,m+1,0).getDate();
 const addDays = (d,n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
-const mondayOf = d => addDays(d, -((d.getDay()+6)%7));
-const dowIdx = d => (d.getDay()+6)%7;
+/* weeks run Sunday to Saturday */
+const weekStart = d => addDays(d, -d.getDay());
+const dowIdx = d => d.getDay();
+const isWE = d => d.getDay()===0 || d.getDay()===6;
+const weekNo = d => isoWeek(addDays(weekStart(d), 1));
 const todayDate = () => { const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); };
 const sameDay = (a,b) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
 function isoWeek(d){ const t = new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day = t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-day); const y0 = new Date(Date.UTC(t.getUTCFullYear(),0,1)); return Math.ceil(((t-y0)/864e5+1)/7); }
@@ -714,8 +723,37 @@ function flush(k){
 }
 function setStatus(t, cls){ const s = document.getElementById("status"); s.textContent = t; s.className = "status" + (cls ? " "+cls : ""); }
 
+/* one-time move of week pages saved under a Monday to the Sunday-start weeks */
+function migrateWeeks(){
+  let moved = 0;
+  const join = (x, y, sep) => [x, y].filter(v => v != null && String(v).trim()).join(sep);
+  [...store.keys()].forEach(k => {
+    const m = /^(fw|w)(\d{4}-\d{2}-\d{2})$/.exec(k); if(!m) return;
+    const d0 = parseYmd(m[2]); if(d0.getDay()!==1) return;
+    const old = store.get(k) || {}, pre = m[1];
+    const aKey = pre + ymd(addDays(d0,-1)), bKey = pre + ymd(addDays(d0,6));
+    const A = clone(store.get(aKey) || {}), B = clone(store.get(bKey) || {});
+    const target = i => i < 6 ? [A, i+1] : [B, 0];
+    if(pre==="w"){
+      (old.days||[]).forEach((v,i) => { if(!v || !String(v).trim()) return; const [T,j] = target(i); T.days = T.days || []; T.days[j] = join(T.days[j], v, "\n"); });
+      if(old.focus) A.focus = join(A.focus, old.focus, " · ");
+      if(old.notes) A.notes = join(A.notes, old.notes, "\n");
+      const pri = (old.pri||[]).filter(p => p && p.t); if(pri.length) A.pri = [...(A.pri||[]).filter(p => p && p.t), ...pri];
+    } else {
+      Object.entries(old.acts||{}).forEach(([i,list]) => { const L = (list||[]).filter(a => a && a.t); if(!L.length) return; const [T,j] = target(+i); T.acts = T.acts || {}; T.acts[j] = [...(T.acts[j]||[]), ...L]; });
+      (old.meals||[]).forEach((ml,i) => { if(!ml) return; const [T,j] = target(i); T.meals = T.meals || []; const cur = T.meals[j] || {}; ["b","l","d"].forEach(f => { if(ml[f]) cur[f] = join(cur[f], ml[f], " / "); }); T.meals[j] = cur; });
+      const todo = (old.todo||[]).filter(t => t && t.t); if(todo.length) A.todo = [...(A.todo||[]).filter(t => t && t.t), ...todo];
+    }
+    if(nonEmpty(A)) put(aKey, A);
+    if(nonEmpty(B)) put(bKey, B);
+    remove(k); moved++;
+  });
+  return moved;
+}
+migrateWeeks();
+
 /* ---------- state ---------- */
-const S = { day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "today" };
+const S = { rzArm: false, rzKeep: true, rzText: "", day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "today" };
 
 /* ---------- Google Calendar ---------- */
 const GC = "Google Calendar";
@@ -796,13 +834,13 @@ function gInput(from, to, calId){
 }
 function gWindow(key){
   const [y,m] = key.split("-").map(Number);
-  const from = mondayOf(new Date(y,m-1,1)), to = addDays(mondayOf(new Date(y,m-1,dim(y,m-1))),7);
+  const from = weekStart(new Date(y,m-1,1)), to = addDays(weekStart(new Date(y,m-1,dim(y,m-1))),7);
   return {from, to};
 }
 function gNeededMonths(){
   const s = new Set([mk(Y(),M())]), t = todayDate(), t2 = addDays(t,21);
   s.add(mk(t.getFullYear(),t.getMonth())); s.add(mk(t2.getFullYear(),t2.getMonth()));
-  if(S.view==="week" || S.view==="family"){ const mo = mondayOf(S.day), su = addDays(mo,6); s.add(mk(mo.getFullYear(),mo.getMonth())); s.add(mk(su.getFullYear(),su.getMonth())); }
+  if(S.view==="week" || S.view==="family"){ const mo = weekStart(S.day), su = addDays(mo,6); s.add(mk(mo.getFullYear(),mo.getMonth())); s.add(mk(su.getFullYear(),su.getMonth())); }
   return s;
 }
 function gTargets(){
@@ -1059,7 +1097,7 @@ function vHome(){
 
   // year progress
   const yl = yearLen(y), elapsed = td.getFullYear()>y ? yl : td.getFullYear()<y ? 0 : dayOfYear(td);
-  const yearBody = `<div class="ringwrap">${ring(elapsed/yl, Math.round(elapsed/yl*100)+"%", "OF "+y)}<div class="stack" style="gap:8px"><div><span class="cap">Days left</span><div class="big">${yl-elapsed}</div></div><div class="muted" style="font-size:13px">Week ${isThisYear?isoWeek(td):"–"} · Day ${elapsed} of ${yl}</div></div></div>`;
+  const yearBody = `<div class="ringwrap">${ring(elapsed/yl, Math.round(elapsed/yl*100)+"%", "OF "+y)}<div class="stack" style="gap:8px"><div><span class="cap">Days left</span><div class="big">${yl-elapsed}</div></div><div class="muted" style="font-size:13px">Week ${isThisYear?weekNo(td):"–"} · Day ${elapsed} of ${yl}</div></div></div>`;
 
   // coming up
   const ups = [];
@@ -1143,7 +1181,7 @@ function vHome(){
   } else nextBody = gBar(false) || `<div class="dempty">Loading your calendar…</div>`;
 
   // family this week
-  const fwk = "fw"+ymd(mondayOf(td)), fw = store.get(fwk) || {}, di = dowIdx(td), mem = (get("family").members||[]);
+  const fwk = "fw"+ymd(weekStart(td)), fw = store.get(fwk) || {}, di = dowIdx(td), mem = (get("family").members||[]);
   const tonight = fw.meals && fw.meals[di] && fw.meals[di].d;
   const actsToday = ((fw.acts||{})[di]||[]).filter(a => a && a.t);
   const grocLeft = ((store.get("groc")||{}).items||[]).filter(i => i && i.t && !i.done).length;
@@ -1151,8 +1189,8 @@ function vHome(){
     ${actsToday.length ? `<ul class="acts">${actsToday.map(a => { const m0 = mem.find(x => x.id===a.who); return `<li>${m0?`<span class="whochip" style="--c:${tc(m0.c)}">${esc(m0.name||"Someone")}</span>`:`<span class="whochip" style="--c:var(--t3)">Everyone</span>`}<span>${esc(a.t)}</span></li>`; }).join("")}</ul>` : `<p class="muted" style="margin:0;font-size:13.5px">No family activities today.</p>`}`
     : dempty("Plan the family's week, meals and groceries in one place.", "family", "Open Family");
 
-  const who = name.replace(/('s)?\s*planner$/i,"").trim();
-  return head(`${hello}${who && !/^my$/i.test(who) ? ", "+esc(who) : ""}`, `${DOWL[dowIdx(td)]}, ${MONTHS[td.getMonth()]} ${td.getDate()}, ${td.getFullYear()}${isThisYear?"":` · showing ${y}`}`) +
+  const who = (name.match(/^(.+?)['\u2019]s\b/) || [])[1] || "";
+  return head(`${hello}${who && !/^my$/i.test(who) ? ", "+esc(who.trim()) : ""}`, `${DOWL[dowIdx(td)]}, ${MONTHS[td.getMonth()]} ${td.getDate()}, ${td.getFullYear()}${isThisYear?"":` · showing ${y}`}`) +
   `<div class="dash">
     ${card("s4","Up next",8,["day","Open day"],nextBody)}
     ${card("s4","Today",4,["day","Plan today"],todayBody)}
@@ -1197,7 +1235,23 @@ function renderMenu(){
     <div><p class="lbl">Logo</p><div class="logorow"><span class="logoprev">${get("settings").logo ? `<img src="${esc(get("settings").logo)}" alt="Your logo">` : LOGO_SVG}</span>
       <div class="stack" style="gap:8px"><label class="btn ghost" for="logo-file">${get("settings").logo ? "Change logo" : "Upload logo"}</label><input type="file" id="logo-file" accept="image/*" hidden>
       ${get("settings").logo ? `<button class="btn ghost" data-act="logorm">Use the default logo</button>` : ""}</div></div>
-      <p class="hint">PNG, JPG, SVG or WebP. Square images look best. It's resized automatically.</p><p class="hint err" id="logo-err" hidden></p></div>`;
+      <p class="hint">PNG, JPG, SVG or WebP. Square images look best. It's resized automatically.</p><p class="hint err" id="logo-err" hidden></p></div>
+    <div><p class="lbl" style="color:var(--bad)">Reset planner</p>${S.rzArm ? `<div class="rz" role="group" aria-label="Confirm reset">
+      <p><b>This permanently deletes every entry</b> in this planner${DB ? " on all your devices" : " on this device"}: to-dos, notes, schedules, goals, habits, budgets, workouts, family plans and stickers. It can't be undone.</p>
+      <label class="row" for="rz-keep"><input type="checkbox" class="ck" id="rz-keep"${S.rzKeep ? " checked" : ""}> Keep my theme, cover, logo, title and Google Calendar connection</label>
+      <label class="cap" for="rz-type">Type RESET to confirm</label>
+      <input class="ln" id="rz-type" autocomplete="off" autocapitalize="characters" spellcheck="false" value="${esc(S.rzText)}">
+      <div class="gbtns"><button class="dangerbtn" data-act="rzgo" id="rz-go"${S.rzText.trim().toUpperCase()==="RESET" ? "" : " disabled"}>Delete all entries</button><button class="btn ghost" data-act="rzcancel">Cancel</button></div></div>`
+    : `<p class="hint" style="margin:0 0 10px">Erase everything you've entered and start fresh. You'll be asked to confirm first.</p><button class="danger" data-act="rzarm">Reset planner…</button>`}</div>`;
+}
+function resetAll(){
+  const keep = S.rzKeep, cur = get("settings");
+  const kept = {}; if(keep) ["light","dark","mode","cover","title","logo","gcalOn","gcalHidden"].forEach(f => { if(cur[f] !== undefined) kept[f] = cur[f]; });
+  [...store.keys()].forEach(k => remove(k));
+  if(keep && Object.keys(kept).length) put("settings", kept);
+  if(!keep || !kept.gcalOn){ gUnwatchAll(); G.byWatch = {}; gRebuild(); if(G.mcp && !["unavailable","blocked","needs_add","needs_reauth"].includes(G.state)) G.state = "off"; }
+  S.rzArm = false; S.rzText = ""; S.noteId = null; S.famWho = "all"; S.day = todayDate(); brandKey = null;
+  closeMenu(); go("home"); paintG(); toast("Planner reset. Everything is cleared.");
 }
 function openMenu(){ closeSheets(); S.menu = true; renderMenu(); document.getElementById("drawer").hidden = false; document.getElementById("scrim").hidden = false; const c = document.querySelector('#drawer [data-act="close"]'); if(c) c.focus(); }
 function closeSheets(){ S.sheet = null; ["more","qadd"].forEach(id => document.getElementById(id).hidden = true); }
@@ -1233,7 +1287,7 @@ function quickAdd(text){
   const td = todayDate();
   if(S.qTarget==="today"){ addTodos("d"+ymd(td), lines, 10); toast(lines.length>1 ? `Added ${lines.length} to-dos for today` : "Added to today's to-dos"); }
   else if(S.qTarget==="tomorrow"){ addTodos("d"+ymd(addDays(td,1)), lines, 10); toast("Added to tomorrow's to-dos"); }
-  else if(S.qTarget==="week"){ addTodos("fw"+ymd(mondayOf(td)), lines, 8); toast("Added to this week's to-dos"); }
+  else if(S.qTarget==="week"){ addTodos("fw"+ymd(weekStart(td)), lines, 8); toast("Added to this week's to-dos"); }
   else if(S.qTarget==="grocery"){ const doc = clone(get("groc")); doc.items = (doc.items||[]).filter(i => i && i.t); lines.forEach(t => doc.items.push({t})); put("groc", doc); toast(lines.length>1 ? `Added ${lines.length} grocery items` : "Added to the grocery list"); }
   else { const k = "n" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); put(k, {type:"dump", title:lines[0].slice(0,80), date:ymd(td), body:text, updated:Date.now()}); toast("Saved as a brain dump note"); }
   return true;
@@ -1253,7 +1307,7 @@ function vYear(){
     let cells = DOW.map(d=>`<span class="dw">${d[0]}</span>`).join("") + "<span></span>".repeat(off);
     for(let d=1; d<=n; d++){
       const dt = new Date(y,m,d), key = ymd(dt), h = hol[`${pad(m+1)}-${pad(d)}`];
-      const cls = [dowIdx(dt)>4?"we":"", h?"hol":"", (nonEmpty(store.get("d"+key)) || evOn(key).length)?"has":"", sameDay(dt,td)?"today":""].join(" ");
+      const cls = [isWE(dt)?"we":"", h?"hol":"", (nonEmpty(store.get("d"+key)) || evOn(key).length)?"has":"", sameDay(dt,td)?"today":""].join(" ");
       cells += `<button class="${cls}" data-go="day" data-date="${key}" aria-label="${name} ${d}${h?", "+esc(h):""}"${h?` title="${esc(h)}"`:""}>${d}</button>`;
     }
     return `<div class="mini" style="--c:${tc(MONTH_COLORS[m])}"><h3><button data-go="month" data-date="${ymd(first)}">${name}</button></h3><div class="mg">${cells}</div></div>`;
@@ -1287,7 +1341,7 @@ function vMonth(){
 }
 
 function vWeek(){
-  const mon = mondayOf(S.day), k = "w"+ymd(mon), sun = addDays(mon,6), td = todayDate();
+  const mon = weekStart(S.day), k = "w"+ymd(mon), sun = addDays(mon,6), td = todayDate();
   const range = mon.getMonth()===sun.getMonth() ? `${MONTHS[mon.getMonth()]} ${mon.getDate()}–${sun.getDate()}, ${sun.getFullYear()}` : `${MON3[mon.getMonth()]} ${mon.getDate()} – ${MON3[sun.getMonth()]} ${sun.getDate()}, ${sun.getFullYear()}`;
   const boxes = DOWL.map((name,i) => {
     const dt = addDays(mon,i), key = ymd(dt), dd = store.get("d"+key) || {}, h = holOf(dt), st = dayStickers(key);
@@ -1299,7 +1353,7 @@ function vWeek(){
       ${T(k,`days.${i}`,{rows:4,label:`${name} plans`})}</section>`;
   }).join("");
   const pri = [0,1,2,3].map(i => `<div class="row${val(k,`pri.${i}.done`)?" done":""}">${C(k,`pri.${i}.done`)}${I(k,`pri.${i}.t`,{label:`Week priority ${i+1}`})}</div>`).join("");
-  return head(`Week ${isoWeek(mon)}`, range, shiftNav("week")) +
+  return head(`Week ${weekNo(mon)}`, range, shiftNav("week")) +
   `<div class="wkgrid">${boxes}<section class="dbox focus"><p class="lbl" style="margin:0">This week</p>${I(k,"focus",{ph:"Weekly focus",label:"Weekly focus"})}<div class="stack">${pri}</div>${T(k,"notes",{rows:2,ph:"Notes",label:"Week notes"})}</section></div>`;
 }
 
@@ -1318,7 +1372,7 @@ function vDay(){
   const todo = Array.from({length:nTodo},(_,i) => { const t = val(k,`todo.${i}.t`); return `<div class="row${val(k,`todo.${i}.done`)?" done":""}">${C(k,`todo.${i}.done`)}${I(k,`todo.${i}.t`,{label:`To-do ${i+1}`})}${t && String(t).trim() && !val(k,`todo.${i}.done`) ? `<button class="xb mv" data-act="mvtodo" data-i="${i}" aria-label="Move to tomorrow" title="Move to tomorrow">↷</button>` : ""}</div>`; }).join("");
   const tray = STICKERS.map(([id,l,c]) => `<button data-act="stk" data-id="${id}" aria-pressed="${!!st[id]}" aria-label="${l} sticker"><span class="stk" style="--c:${tc(c)}">${l}</span></button>`).join("");
   return head(`${DOWL[dowIdx(d)]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`,
-    `Day ${dayOfYear(d)} of ${yearLen(d.getFullYear())} · Week ${isoWeek(d)}${h?` · <b style="color:var(--accent)">${esc(h)}</b>`:""}`, shiftNav("day")) +
+    `Day ${dayOfYear(d)} of ${yearLen(d.getFullYear())} · Week ${weekNo(d)}${h?` · <b style="color:var(--accent)">${esc(h)}</b>`:""}`, shiftNav("day")) +
   `<div class="dayg">
     <div class="sec"><div><p class="lbl">Schedule</p>${gBar(true)}${allDay.length?`<div class="evs" style="margin:${gBar(true)?"10px":"0"} 0 10px">${allDay.map(e => evChip(e, true)).join("")}</div>`:""}<div class="sched"${gBar(true)?' style="margin-top:10px"':""}>${sched}</div></div>
       <div><p class="lbl">Stickers</p><div class="stray">${tray}</div><p class="muted" style="font-size:13px;margin:8px 0 0">Tap to stick one on this day. They show up on the week and month pages too.</p></div></div>
@@ -1348,7 +1402,7 @@ function vGoals(){
   let body = "";
   for(let i=0;i<rows;i++){
     let tds = `<td class="hn">${I(hk,`habits.${i}.name`,{ph:i===0?"e.g. Ride or gym":i===1?"e.g. Read 20 min":"",label:`Habit ${i+1}`})}</td>`;
-    for(let d=1; d<=n; d++){ const we = dowIdx(new Date(y,m,d))>4; tds += `<td class="${we?"we":""}">${C(hk,`habits.${i}.days.${d}`,`Habit ${i+1}, day ${d}`)}</td>`; }
+    for(let d=1; d<=n; d++){ const we = isWE(new Date(y,m,d)); tds += `<td class="${we?"we":""}">${C(hk,`habits.${i}.days.${d}`,`Habit ${i+1}, day ${d}`)}</td>`; }
     tds += `<td class="hp" id="hp-${i}"></td>`;
     body += `<tr>${tds}</tr>`;
   }
@@ -1413,8 +1467,8 @@ function vFitness(){
   const mins = log.reduce((a,e)=>a+num(e.mins),0), miles = log.reduce((a,e)=>a+num(e.dist),0);
   const byType = {}; log.forEach(e => byType[e.type] = (byType[e.type]||0)+1);
   const weeks = [], seen = {};
-  for(let d=1; d<=dim(y,m); d++){ const mon = ymd(mondayOf(new Date(y,m,d))); if(!seen[mon]){ seen[mon] = {key:mon, mins:0}; weeks.push(seen[mon]); } }
-  log.forEach(e => { if(e.date){ const w = seen[ymd(mondayOf(parseYmd(e.date)))]; if(w) w.mins += num(e.mins); } });
+  for(let d=1; d<=dim(y,m); d++){ const mon = ymd(weekStart(new Date(y,m,d))); if(!seen[mon]){ seen[mon] = {key:mon, mins:0}; weeks.push(seen[mon]); } }
+  log.forEach(e => { if(e.date){ const w = seen[ymd(weekStart(parseYmd(e.date)))]; if(w) w.mins += num(e.mins); } });
   const max = Math.max(60, ...weeks.map(w=>w.mins));
   const bars = weeks.map(w => { const d = parseYmd(w.key); return `<div class="bar"><b>${w.mins||""}</b><i style="height:${Math.round(w.mins/max*100)}%"></i><span>${MON3[d.getMonth()]} ${d.getDate()}</span></div>`; }).join("");
   const rows = log.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(e => {
@@ -1468,7 +1522,7 @@ function vNotes(){
 }
 
 function vFamily(){
-  const mon = mondayOf(S.day), k = "fw"+ymd(mon), sun = addDays(mon,6), td = todayDate(), doc = get(k);
+  const mon = weekStart(S.day), k = "fw"+ymd(mon), sun = addDays(mon,6), td = todayDate(), doc = get(k);
   const mem = get("family").members || [];
   const range = `${MON3[mon.getMonth()]} ${mon.getDate()} – ${MON3[sun.getMonth()]} ${sun.getDate()}, ${sun.getFullYear()}`;
   const memChip = id => { const m = mem.find(x => x.id===id); return m ? `<span class="whochip" style="--c:${tc(m.c)}">${esc(m.name||"Someone")}</span>` : `<span class="whochip" style="--c:var(--t3)">Everyone</span>`; };
@@ -1605,6 +1659,10 @@ main.addEventListener("input", onField);
 main.addEventListener("change", onField);
 const drawerEl = document.getElementById("drawer");
 drawerEl.addEventListener("input", onField);
+drawerEl.addEventListener("input", e => {
+  if(e.target.id==="rz-type"){ S.rzText = e.target.value; const g = document.getElementById("rz-go"); if(g) g.disabled = S.rzText.trim().toUpperCase()!=="RESET"; }
+});
+drawerEl.addEventListener("change", e => { if(e.target.id==="rz-keep") S.rzKeep = e.target.checked; });
 drawerEl.addEventListener("change", e => { if(e.target.id==="logo-file"){ handleLogo(e.target.files && e.target.files[0]); e.target.value = ""; } });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && (S.menu || S.sheet)) closeMenu(); });
 document.getElementById("qadd").addEventListener("submit", e => {
@@ -1646,7 +1704,7 @@ main.addEventListener("submit", e => {
     e.preventDefault();
     const i = +e.target.dataset.fam, inp = document.getElementById("fa-t-"+i), whoEl = document.getElementById("fa-who-"+i);
     const t = inp.value.trim(); if(!t){ inp.focus(); return; }
-    const k = "fw"+ymd(mondayOf(S.day)), doc = clone(get(k)); doc.acts = doc.acts || {}; (doc.acts[i] = doc.acts[i] || []).push({t, who: whoEl ? whoEl.value : ""});
+    const k = "fw"+ymd(weekStart(S.day)), doc = clone(get(k)); doc.acts = doc.acts || {}; (doc.acts[i] = doc.acts[i] || []).push({t, who: whoEl ? whoEl.value : ""});
     put(k, doc); render(); const ni = document.getElementById("fa-t-"+i); if(ni) ni.focus(); return;
   }
   if(e.target.id === "grocform"){
@@ -1675,6 +1733,9 @@ document.addEventListener("click", e => {
   else if(a==="stab"){ const nm = +b.dataset.m; S.day = new Date(y, nm, Math.min(d, dim(y,nm))); if(MONTH_AWARE.includes(S.view)) render(); else go("month"); }
   else if(a==="shift"){ shiftBy(+b.dataset.n); }
   else if(a==="menu"){ openMenu(); }
+  else if(a==="rzarm"){ S.rzArm = true; S.rzText = ""; S.rzKeep = true; renderMenu(); const t = document.getElementById("rz-type"); if(t) t.focus(); }
+  else if(a==="rzcancel"){ S.rzArm = false; S.rzText = ""; renderMenu(); const r = document.querySelector('#drawer [data-act="rzarm"]'); if(r) r.focus(); }
+  else if(a==="rzgo"){ if(S.rzText.trim().toUpperCase()==="RESET") resetAll(); }
   else if(a==="logorm"){ const doc = clone(get("settings")); delete doc.logo; put("settings", doc); applyBrand(); renderMenu(); if(S.view==="cover") render(); toast("Default logo restored"); }
   else if(a==="close"){ closeMenu(); }
   else if(a==="more"){ openSheet("more"); }
@@ -1698,7 +1759,7 @@ document.addEventListener("click", e => {
   else if(a==="famadd"){ const doc = clone(get("family")); doc.members = doc.members || []; const used = doc.members.map(x => x.c); const c = [4,5,6,7,8,1,2,3].find(x => !used.includes(x)) || 1; doc.members.push({id:"p"+Date.now().toString(36), name:"", c}); put("family", doc); render(); const ins = main.querySelectorAll('[data-k="family"][data-p$=".name"]'); if(ins.length) ins[ins.length-1].focus(); }
   else if(a==="famrm"){ const doc = clone(get("family")); const rm = (doc.members||[]).splice(+b.dataset.i,1)[0]; if(rm && S.famWho===rm.id) S.famWho = "all"; put("family", doc); render(); }
   else if(a==="famcolor"){ const doc = clone(get("family")), mm = doc.members[+b.dataset.i]; mm.c = (mm.c % 8) + 1; put("family", doc); render(); }
-  else if(a==="famdel"){ const k = "fw"+ymd(mondayOf(S.day)), doc = clone(get(k)); ((doc.acts||{})[b.dataset.d]||[]).splice(+b.dataset.j,1); put(k, doc); render(); }
+  else if(a==="famdel"){ const k = "fw"+ymd(weekStart(S.day)), doc = clone(get(k)); ((doc.acts||{})[b.dataset.d]||[]).splice(+b.dataset.j,1); put(k, doc); render(); }
   else if(a==="grocdel"){ const doc = clone(get("groc")); (doc.items||[]).splice(+b.dataset.i,1); put("groc", doc); render(); }
   else if(a==="grocclear"){ const doc = clone(get("groc")); doc.items = (doc.items||[]).filter(x => x && x.t && !x.done); put("groc", doc); render(); toast("Cleared checked items"); }
   else if(a==="light" || a==="dark" || a==="mode"){
@@ -1775,7 +1836,7 @@ setStatus("Saved on this device");
         changed = true;
       });
       if(first){ first = false; [...pending].forEach(flush); if(!pending.size) setStatus("Synced", "ok"); }
-      if(changed){ cacheLocal(); if(editing()) dirty = true; else render(); }
+      if(changed){ migrateWeeks(); cacheLocal(); if(editing()) dirty = true; else render(); }
     }, () => setStatus("Sync stopped. Reload the page to reconnect.", "err"));
   } catch(e) { setStatus("Saved on this device only"); }
 })();
