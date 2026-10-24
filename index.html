@@ -502,10 +502,13 @@ a.ev:hover{background:color-mix(in srgb, var(--ec, var(--accent)) 28%, var(--pap
 .tb{background:var(--c);color:var(--tab-ink);font-weight:600;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
   border:1px solid color-mix(in srgb, var(--c) 65%, var(--ink));box-shadow:0 1px 2px var(--shadow)}
 .tb:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.tb .rh{position:absolute;left:0;right:0;height:16px;cursor:ns-resize;touch-action:none;z-index:2}
-.tb .rh.top{top:-3px} .tb .rh.bot{bottom:-3px}
+.tb{padding-top:11px;padding-bottom:9px}
+.tb.short{padding-top:1px;padding-bottom:1px}
+.tb .rh{position:absolute;left:0;right:0;height:13px;cursor:ns-resize;touch-action:none;z-index:2}
+.tb .rh.top{top:-2px} .tb .rh.bot{bottom:-2px}
+.tb.short .rh{height:9px}
 .tb .rh::after{content:"";position:absolute;left:50%;width:26px;height:4px;margin-left:-13px;border-radius:2px;background:var(--tab-ink);opacity:.4}
-.tb .rh.top::after{top:5px} .tb .rh.bot::after{bottom:5px}
+.tb .rh.top::after{top:4px} .tb .rh.bot::after{bottom:4px}
 .tb.short .rh::after{display:none}
 .tb.live{z-index:6;box-shadow:0 12px 24px -10px var(--shadow);opacity:.95}
 .te{background:color-mix(in srgb, var(--ec, var(--accent)) 20%, var(--paper));border-left:3px solid var(--ec, var(--accent));color:var(--ink);text-decoration:none}
@@ -524,6 +527,11 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
 .bkhead .blk-src{cursor:default;box-shadow:none}
 .bkgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .bkgrid label,.bkfull{display:flex;flex-direction:column;gap:2px}
+.bkrep{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:12px;background:color-mix(in srgb, var(--accent) 7%, var(--paper));border:1px solid var(--line)}
+.dchips{display:flex;gap:6px;flex-wrap:wrap}
+.dchips button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--paper);font-weight:700;color:var(--muted)}
+.dchips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+.ti .rp{font-style:normal;font-weight:700;opacity:.75;flex:none}
 
 /* to-do move */
 .mv{font-size:16px}
@@ -709,8 +717,25 @@ const BT = Object.fromEntries(BLOCKS.map(([id,l,c,dur,ic]) => [id, {l, c, dur, i
 const bIcon = t => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${BT[t].ic}</svg>`;
 const fmtMin = m => { m = Math.max(0, Math.round(m)); const h = Math.floor(m/60)%24, mm = m%60; return `${h%12||12}${mm?":"+pad(mm):""}${h<12?"a":"p"}`; };
 const durTxt = d => d < 60 ? `${d} min` : (d % 60 ? `${Math.floor(d/60)} h ${d%60} min` : `${d/60} hour${d===60?"":"s"}`);
-const blocksOf = key => ((store.get("d"+key)||{}).blocks||[]).filter(b => b && BT[b.t]).sort((a,b) => a.s - b.s);
-const blkSm = (b, withEnd) => `<div class="blk sm" style="--c:${tc(BT[b.t].c)}">${bIcon(b.t)}<b>${fmtMin(b.s)}${withEnd?"–"+fmtMin(b.s+b.dur):""}</b><span>${BT[b.t].l}</span>${b.note?`<em>${esc(b.note)}</em>`:""}</div>`;
+/* repeating blocks live in one doc, "rec": {series:[{id,t,s,dur,note,days:[0-6],start,until,skip:[],ov:{date:{s,dur,note}}}]} */
+const recSeries = () => ((store.get("rec")||{}).series||[]).filter(x => x && BT[x.t]);
+function occurrencesOn(key){
+  const dow = parseYmd(key).getDay();
+  return recSeries().filter(x => x.start <= key && (!x.until || key <= x.until) && (x.days||[]).includes(dow) && !(x.skip||[]).includes(key))
+    .map(x => { const o = (x.ov||{})[key] || {}; return { id: `r:${x.id}:${key}`, t: o.t || x.t, s: o.s ?? x.s, dur: o.dur ?? x.dur, note: o.note ?? x.note, rec: x.id, date: key, days: x.days, until: x.until || "" }; });
+}
+const blocksOf = key => [...((store.get("d"+key)||{}).blocks||[]).filter(b => b && BT[b.t]), ...occurrencesOn(key)].sort((a,b) => a.s - b.s);
+const DAYS1 = ["S","M","T","W","T","F","S"];
+function repeatLabel(days){
+  const d = [...(days||[])].sort();
+  if(!d.length) return "Does not repeat";
+  if(d.length===7) return "Every day";
+  if(d.join()==="1,2,3,4,5") return "Weekdays";
+  if(d.join()==="0,6") return "Weekends";
+  if(d.length===1) return "Every " + ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d[0]];
+  return d.map(i => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][i]).join(", ");
+}
+const blkSm = (b, withEnd) => `<div class="blk sm" style="--c:${tc(BT[b.t].c)}">${bIcon(b.t)}<b>${fmtMin(b.s)}${withEnd?"–"+fmtMin(b.s+b.dur):""}</b><span>${BT[b.t].l}${b.rec?" ↻":""}</span>${b.note?`<em>${esc(b.note)}</em>`:""}</div>`;
 const LIGHT_THEMES = [["sage","Sage"],["blush","Blush"],["ocean","Ocean"],["linen","Linen"]];
 const DARK_THEMES = [["midnight","Midnight"],["charcoal","Charcoal"],["forest","Forest"],["plum","Plum"]];
 const MODES = [["auto","Auto"],["light","Light"],["dark","Dark"]];
@@ -834,7 +859,7 @@ function migrateWeeks(){
 migrateWeeks();
 
 /* ---------- state ---------- */
-const S = { pickBlock: null, blkEdit: null, rzArm: false, rzKeep: true, rzText: "", day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "today" };
+const S = { bkDays: null, bkScope: null, bkUntil: null, pickBlock: null, blkEdit: null, rzArm: false, rzKeep: true, rzText: "", day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "today" };
 
 /* ---------- Google Calendar ---------- */
 const GC = "Google Calendar";
@@ -1485,7 +1510,10 @@ function openSheet(id){
   S.menu = false; document.getElementById("drawer").hidden = true; closeSheets(); S.sheet = id;
   const el = document.getElementById(id);
   if(id==="blk"){
-    const b = (get("d"+ymd(S.day)).blocks||[]).find(x => x && x.id===S.blkEdit); if(!b) return;
+    const b = findBlock(S.blkEdit); if(!b) return;
+    if(S.bkDays === null) S.bkDays = [...(b.days||[])];
+    if(S.bkScope === null) S.bkScope = "one";
+    const dset = new Set(S.bkDays), preset = !dset.size ? "none" : dset.size===7 ? "daily" : [...dset].sort().join()==="1,2,3,4,5" ? "weekdays" : (dset.size===1 && dset.has(S.day.getDay())) ? "weekly" : "custom";
     const starts = []; for(let m=5*60; m<=23*60; m+=15) starts.push(m);
     const durs = [15,30,45,60,75,90,120,150,180,240,300,360,420,480,540,600];
     if(!durs.includes(b.dur)) durs.push(b.dur), durs.sort((a,c) => a-c);
@@ -1498,7 +1526,21 @@ function openSheet(id){
           <label><span class="cap">Length</span><select class="ln" id="bk-d">${durs.map(d => `<option value="${d}"${d===b.dur?" selected":""}>${durTxt(d)}</option>`).join("")}</select></label>
           <label><span class="cap">Note</span><input class="ln" id="bk-n" value="${esc(b.note||"")}" placeholder="Optional"></label>
         </div>
-        <div class="gbtns" style="margin:0"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" data-act="blkcopy">Copy to tomorrow</button><button class="danger" type="button" data-act="blkdel">Remove</button></div>
+        <div class="bkrep">
+          <label class="bkfull"><span class="cap">Repeats</span><select class="ln" id="bk-r">
+            <option value="none"${preset==="none"?" selected":""}>Does not repeat</option>
+            <option value="daily"${preset==="daily"?" selected":""}>Every day</option>
+            <option value="weekdays"${preset==="weekdays"?" selected":""}>Weekdays (Mon–Fri)</option>
+            <option value="weekly"${preset==="weekly"?" selected":""}>Every ${DOWL[S.day.getDay()]}</option>
+            <option value="custom"${preset==="custom"?" selected":""}>Pick days…</option></select></label>
+          ${dset.size ? `<div class="dchips" role="group" aria-label="Repeat on">${DAYS1.map((l,i) => `<button type="button" data-act="bkday" data-d="${i}" aria-pressed="${dset.has(i)}" aria-label="${DOWL[i]}">${l}</button>`).join("")}</div>
+          <label class="bkfull"><span class="cap">Ends</span><input class="ln" type="date" id="bk-u" value="${esc(S.bkUntil ?? b.until ?? "")}" min="${ymd(S.day)}"><span class="hint" style="margin:2px 0 0">Leave blank to repeat forever.</span></label>` : ""}
+        </div>
+        ${b.rec ? `<div><span class="cap">Apply changes to</span><div class="seg" role="group" aria-label="Apply changes to" style="grid-template-columns:1fr 1fr;margin-top:4px">
+          <button type="button" data-act="bkscope" data-v="one" aria-pressed="${S.bkScope==="one"}">This day only</button><button type="button" data-act="bkscope" data-v="all" aria-pressed="${S.bkScope==="all"}">Every repeat</button></div>
+          <p class="hint" style="margin:6px 0 0">${repeatLabel(b.days)}${b.until ? ` until ${MON3[parseYmd(b.until).getMonth()]} ${parseYmd(b.until).getDate()}` : ""}. Changes to the repeat days always apply to every repeat.</p></div>` : ""}
+        <div class="gbtns" style="margin:0"><button class="btn" type="submit">Save</button><button class="btn ghost" type="button" data-act="blkcopy">Copy to tomorrow</button>
+          ${b.rec ? `<button class="danger" type="button" data-act="blkdel" data-v="one">Remove this day</button><button class="danger" type="button" data-act="blkdel" data-v="future">Stop repeating from here</button>` : `<button class="danger" type="button" data-act="blkdel">Remove</button>`}</div>
       </form>`;
   } else if(id==="more"){
     const icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>';
@@ -1617,7 +1659,7 @@ function vDay(){
     const b = it.b, L = BT[b.t].l;
     return `<div class="ti tb${short?" short":""}" tabindex="0" role="button" data-blk="${b.id}" style="${pos(it)};--c:${tc(BT[b.t].c)}" aria-label="${L}, ${fmtMin(b.s)} to ${fmtMin(b.s+b.dur)}. Drag to move, drag the top or bottom edge to change the time, or tap to edit.">
       <span class="rh top" data-edge="top" aria-hidden="true"></span>
-      <div class="tl">${bIcon(b.t)}<span>${L}</span>${short?`<b class="tr">${fmtMin(b.s)}–${fmtMin(b.s+b.dur)}</b>`:""}</div>${short?"":`<b class="tr">${fmtMin(b.s)}–${fmtMin(b.s+b.dur)}</b>${b.note?`<em>${esc(b.note)}</em>`:""}`}
+      <div class="tl">${bIcon(b.t)}<span>${L}</span>${b.rec ? `<i class="rp" title="Repeats ${esc(repeatLabel(b.days).toLowerCase())}" aria-label="repeats">↻</i>` : ""}${short?`<b class="tr">${fmtMin(b.s)}–${fmtMin(b.s+b.dur)}</b>`:""}</div>${short?"":`<b class="tr">${fmtMin(b.s)}–${fmtMin(b.s+b.dur)}</b>${b.note?`<em>${esc(b.note)}</em>`:""}`}
       <span class="rh bot" data-edge="bot" aria-hidden="true"></span></div>`;
   };
   let rows = "";
@@ -1984,6 +2026,44 @@ main.addEventListener("submit", e => {
   (doc.log = doc.log || []).push({date, type:document.getElementById("fx-type").value, mins, dist, notes:document.getElementById("fx-note").value.trim()});
   put(k, doc); render();
 });
+/* ---------- block lookup and updates (one-off or repeating) ---------- */
+function findBlock(id){ return blocksOf(ymd(S.day)).find(b => b.id===id); }
+function editRec(fn){ const doc = clone(get("rec")); doc.series = (doc.series||[]).filter(Boolean); fn(doc); put("rec", doc); }
+function updateBlock(b, ch, scope){
+  if(!b.rec){
+    const k = "d"+ymd(S.day), doc = clone(get(k)), x = (doc.blocks||[]).find(y => y && y.id===b.id); if(!x) return;
+    Object.assign(x, ch); if(!x.note) delete x.note; put(k, doc); return;
+  }
+  editRec(doc => {
+    const x = doc.series.find(y => y.id===b.rec); if(!x) return;
+    if(scope==="all"){ Object.assign(x, ch); if(!x.note) delete x.note; if(ch.s!=null || ch.dur!=null || ch.t || "note" in ch) x.ov = {}; }
+    else { x.ov = x.ov || {}; x.ov[b.date] = {...(x.ov[b.date]||{}), ...ch}; }
+  });
+}
+function removeBlock(b, scope){
+  if(!b.rec){ const k = "d"+ymd(S.day), doc = clone(get(k)); doc.blocks = (doc.blocks||[]).filter(y => y && y.id!==b.id); put(k, doc); return; }
+  editRec(doc => {
+    const i = doc.series.findIndex(y => y.id===b.rec); if(i<0) return; const x = doc.series[i];
+    if(scope==="one"){ x.skip = [...new Set([...(x.skip||[]), b.date])]; }
+    else { const prev = ymd(addDays(parseYmd(b.date), -1)); if(prev < x.start) doc.series.splice(i,1); else x.until = prev; }
+  });
+}
+function setRepeat(b, days, until){
+  const date = ymd(S.day), vals = { t: b.t, s: b.s, dur: b.dur, note: b.note };
+  if(!b.rec){
+    if(!days.length) return;
+    removeBlock(b);
+    editRec(doc => doc.series.push({ id: newId(), ...vals, days, start: date, until: until || "" }));
+    return;
+  }
+  if(!days.length){
+    removeBlock(b, "future");
+    const k = "d"+date, doc = clone(get(k)); doc.blocks = (doc.blocks||[]).filter(Boolean); doc.blocks.push({ id: newId(), ...vals }); if(!vals.note) delete doc.blocks[doc.blocks.length-1].note; put(k, doc);
+    return;
+  }
+  editRec(doc => { const x = doc.series.find(y => y.id===b.rec); if(x){ x.days = days; x.until = until || ""; } });
+}
+
 /* ---------- activity blocks: drag to add, move and resize ---------- */
 const DR = { src:null, on:false };
 const SNAP = 15, G_START = 360;
@@ -2050,15 +2130,15 @@ function endDrag(commit){
   if(commit){
     if(kind === "new" && ns != null){ S.pickBlock = null; addBlock(type, ns); }
     else if(kind !== "new" && ns != null){
-      const k = blockKey(), doc = clone(get(k)), b = (doc.blocks||[]).find(x => x && x.id===blk);
-      if(b && (b.s !== ns || b.dur !== nd)){ b.s = ns; b.dur = nd; put(k, doc); toast(`${BT[b.t].l} ${fmtMin(ns)}–${fmtMin(ns+nd)}`); }
+      const b = findBlock(blk);
+      if(b && (b.s !== ns || b.dur !== nd)){ updateBlock(b, { s: ns, dur: nd }, "one"); toast(b.rec ? `${BT[b.t].l} ${fmtMin(ns)}–${fmtMin(ns+nd)} on this day only. Tap it to change every repeat.` : `${BT[b.t].l} ${fmtMin(ns)}–${fmtMin(ns+nd)}`); }
     }
   }
   render();
 }
 function tapBlockEl(el){
   if(el.classList.contains("blk-src")){ S.pickBlock = S.pickBlock===el.dataset.bt ? null : el.dataset.bt; render(); const again = main.querySelector(`.blk-src[data-bt="${el.dataset.bt}"]`); if(again) again.focus(); }
-  else { S.blkEdit = el.dataset.blk; openSheet("blk"); }
+  else { S.blkEdit = el.dataset.blk; S.bkDays = null; S.bkScope = null; S.bkUntil = null; openSheet("blk"); }
 }
 main.addEventListener("pointerdown", e => {
   if(e.button !== 0 || DR.src) return;
@@ -2066,7 +2146,7 @@ main.addEventListener("pointerdown", e => {
   const edge = e.target.closest(".rh"), isNew = el.classList.contains("blk-src");
   let s0 = 0, d0 = 0, grab = 0;
   if(!isNew){
-    const b = (get(blockKey()).blocks||[]).find(x => x && x.id===el.dataset.blk); if(!b) return;
+    const b = findBlock(el.dataset.blk); if(!b) return;
     s0 = b.s; d0 = b.dur; const gi = gridInfo(), m = gi ? minAtY(gi, e.clientY) : b.s;
     grab = edge && edge.dataset.edge==="bot" ? m - (b.s + b.dur) : m - b.s;
   }
@@ -2092,12 +2172,30 @@ document.addEventListener("keydown", e => {
   const tb = e.target.closest && e.target.closest(".tb");
   if(tb && (e.key==="Enter" || e.key===" ")){ e.preventDefault(); tapBlockEl(tb); }
 });
+function keepSheet(){
+  const keep = {}; ["bk-t","bk-s","bk-d","bk-n"].forEach(id => { const el = document.getElementById(id); if(el) keep[id] = el.value; });
+  const u = document.getElementById("bk-u"); if(u) S.bkUntil = u.value;
+  openSheet("blk");
+  Object.entries(keep).forEach(([id,v]) => { const el = document.getElementById(id); if(el) el.value = v; });
+}
+document.getElementById("blk").addEventListener("change", e => {
+  if(e.target.id !== "bk-r") return;
+  const v = e.target.value, dow = S.day.getDay();
+  S.bkDays = v==="none" ? [] : v==="daily" ? [0,1,2,3,4,5,6] : v==="weekdays" ? [1,2,3,4,5] : v==="weekly" ? [dow] : (S.bkDays && S.bkDays.length ? S.bkDays : [dow]);
+  keepSheet();
+  const r = document.getElementById("bk-r"); if(r) r.focus();
+});
 document.getElementById("blk").addEventListener("submit", e => {
   e.preventDefault();
-  const k = blockKey(), doc = clone(get(k)), b = (doc.blocks||[]).find(x => x && x.id===S.blkEdit); if(!b) return closeMenu();
-  b.t = document.getElementById("bk-t").value; b.s = +document.getElementById("bk-s").value; b.dur = +document.getElementById("bk-d").value;
-  const n = document.getElementById("bk-n").value.trim(); if(n) b.note = n; else delete b.note;
-  put(k, doc); closeMenu(); render(); toast(`Saved ${BT[b.t].l}, ${fmtMin(b.s)}–${fmtMin(b.s+b.dur)}`);
+  const b = findBlock(S.blkEdit); if(!b) return closeMenu();
+  const ch = { t: document.getElementById("bk-t").value, s: +document.getElementById("bk-s").value, dur: +document.getElementById("bk-d").value, note: document.getElementById("bk-n").value.trim() };
+  const days = [...new Set(S.bkDays||[])].sort(), untilEl = document.getElementById("bk-u"), until = days.length && untilEl ? untilEl.value : "";
+  const oldDays = [...(b.days||[])].sort().join(), repChanged = days.join() !== oldDays || (b.rec && until !== (b.until||""));
+  const valChanged = ch.t!==b.t || ch.s!==b.s || ch.dur!==b.dur || (ch.note||"")!==(b.note||"");
+  if(valChanged) updateBlock(b, ch, b.rec ? S.bkScope : "one");
+  if(repChanged){ const fresh = findBlock(S.blkEdit) || {...b, ...ch}; setRepeat({...fresh, ...ch}, days, until); }
+  closeMenu(); render();
+  toast(repChanged ? (days.length ? `${BT[ch.t].l} repeats ${repeatLabel(days).toLowerCase()}` : `${BT[ch.t].l} no longer repeats`) : b.rec && valChanged ? (S.bkScope==="all" ? `Updated every ${BT[ch.t].l}` : `Updated this day's ${BT[ch.t].l}`) : `Saved ${BT[ch.t].l}, ${fmtMin(ch.s)}–${fmtMin(ch.s+ch.dur)}`);
 });
 
 document.addEventListener("click", e => {
@@ -2121,8 +2219,10 @@ document.addEventListener("click", e => {
   else if(a==="shift"){ shiftBy(+b.dataset.n); }
   else if(a==="menu"){ openMenu(); }
   else if(a==="pickcancel"){ S.pickBlock = null; render(); }
-  else if(a==="blkdel"){ const k = blockKey(), doc = clone(get(k)); const rm = (doc.blocks||[]).find(x => x && x.id===S.blkEdit); doc.blocks = (doc.blocks||[]).filter(x => x && x.id!==S.blkEdit); put(k, doc); closeMenu(); render(); if(rm) toast(`Removed ${BT[rm.t].l}`); }
-  else if(a==="blkcopy"){ const src = (get(blockKey()).blocks||[]).find(x => x && x.id===S.blkEdit); if(src){ const tk = "d"+ymd(addDays(S.day,1)), doc = clone(get(tk)); doc.blocks = (doc.blocks||[]).filter(Boolean); doc.blocks.push({...src, id: "b" + Date.now().toString(36) + Math.random().toString(36).slice(2,5)}); put(tk, doc); toast(`Copied ${BT[src.t].l} to tomorrow`); } }
+  else if(a==="blkdel"){ const rm = findBlock(S.blkEdit); if(rm){ removeBlock(rm, b.dataset.v); toast(b.dataset.v==="future" ? `${BT[rm.t].l} stops repeating from ${MON3[S.day.getMonth()]} ${S.day.getDate()}` : `Removed ${BT[rm.t].l}${rm.rec ? " for this day" : ""}`); } closeMenu(); render(); }
+  else if(a==="bkscope"){ S.bkScope = b.dataset.v; document.querySelectorAll('#blk [data-act="bkscope"]').forEach(x => x.setAttribute("aria-pressed", String(x===b))); }
+  else if(a==="bkday"){ const i = +b.dataset.d, set = new Set(S.bkDays||[]); set.has(i) ? set.delete(i) : set.add(i); S.bkDays = [...set]; const u = document.getElementById("bk-u"); if(u) S.bkUntil = u.value; keepSheet(); }
+  else if(a==="blkcopy"){ const src0 = findBlock(S.blkEdit), src = src0 && { id: src0.id, t: src0.t, s: src0.s, dur: src0.dur, ...(src0.note ? { note: src0.note } : {}) }; if(src){ const tk = "d"+ymd(addDays(S.day,1)), doc = clone(get(tk)); doc.blocks = (doc.blocks||[]).filter(Boolean); doc.blocks.push({...src, id: "b" + Date.now().toString(36) + Math.random().toString(36).slice(2,5)}); put(tk, doc); toast(`Copied ${BT[src.t].l} to tomorrow`); } }
   else if(a==="rzarm"){ S.rzArm = true; S.rzText = ""; S.rzKeep = true; renderMenu(); const t = document.getElementById("rz-type"); if(t) t.focus(); }
   else if(a==="rzcancel"){ S.rzArm = false; S.rzText = ""; renderMenu(); const r = document.querySelector('#drawer [data-act="rzarm"]'); if(r) r.focus(); }
   else if(a==="rzgo"){ if(S.rzText.trim().toUpperCase()==="RESET") resetAll(); }
@@ -2191,6 +2291,8 @@ document.addEventListener("click", e => {
   }
 });
 
+/* read-only hook used by automated tests */
+try { Object.defineProperty(window, "__daybook", { value: Object.freeze({ blocksOn: k => blocksOf(k).map(b => ({ t: b.t, s: b.s, dur: b.dur, rec: !!b.rec })), goDay: d => { S.day = parseYmd(d); go("day"); } }) }); } catch(e) {}
 render();
 setStatus("Saved on this device");
 

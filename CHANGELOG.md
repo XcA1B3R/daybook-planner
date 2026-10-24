@@ -2,6 +2,15 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v1.6 · 2026-10-24
+
+- Blocks can repeat: every day, on weekdays, every week on the same day, or on days you pick. You can also set an end date.
+- Tap a repeating block and choose **This day only** or **Every repeat** before saving a change.
+- Dragging or resizing a repeating block changes that day only. Use the editor to change every repeat.
+- **Remove this day** skips one day. **Stop repeating from here** ends the series from that day on.
+- Repeating blocks show a ↻ mark.
+- The title of a tall block now sits below its top resize handle, so grabbing the title moves the block instead of resizing it.
+
 ## v1.5 · 2026-10-24
 
 - Google Calendar now works on the GitHub site, not just inside Claude. The planner signs in to Google directly, and only reads your calendar.
