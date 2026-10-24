@@ -103,6 +103,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 .brand svg{width:44px;height:44px;display:block}
 .brand:hover svg{transform:rotate(-4deg)}
 .brand svg{transition:transform .15s}
+.brand{gap:10px;min-width:0;max-width:100%;color:var(--ink)}
+.brand img{width:44px;height:44px;object-fit:contain;border-radius:10px;display:block;flex:none}
+.brand .bt{font:700 28px/1.1 var(--hand);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;padding-right:4px}
+.logorow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logoprev{width:72px;height:72px;border-radius:14px;border:1px dashed var(--line);display:grid;place-items:center;flex:none;background:var(--paper)}
+.logoprev img,.logoprev svg{width:56px;height:56px;object-fit:contain;display:block}
+label.btn{display:inline-block;cursor:pointer}
+.hint.err{color:var(--bad)}
+.clogo{width:64px;height:64px;object-fit:contain;display:block;margin:0 auto 10px}
 .yearsw{display:flex;align-items:center;gap:4px}
 .yearsw span{font:24px/1 var(--serif);min-width:3ch;text-align:center;font-variant-numeric:tabular-nums}
 .iconb{border:1px solid var(--line);background:var(--paper);border-radius:999px;width:32px;height:32px;display:grid;place-items:center;font-size:17px;line-height:1}
@@ -528,7 +537,9 @@ a.ev:hover{background:color-mix(in srgb, var(--ec, var(--accent)) 28%, var(--pap
   .toptabs{display:none}
   .topbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;padding-bottom:12px}
   .topbar .brand{grid-column:1;grid-row:1;justify-self:start}
-  .brand svg{width:40px;height:40px}
+  .brand svg,.brand img{width:40px;height:40px}
+  .brand .bt{font-size:23px}
+  .brand{gap:8px}
   .topbar .yearsw{grid-row:2;grid-column:1;justify-self:start}
   .topbar .gstat{grid-row:2;grid-column:1 / -1;justify-self:end}
   .topbar .status{grid-row:3;grid-column:1 / -1}
@@ -977,7 +988,7 @@ function vCover(){
   const title = (s.title || "").trim() || "My Planner";
   const idx = TABS.map(([v,l,c],i) => `<button data-go="${v}" style="--c:${tc(c)}"><i></i>${l}<span class="dots"></span><span class="pg">${pad(i+1)}</span></button>`).join("");
   return `<div class="coverg">
-    <div class="coverbook cv-${cover}"><div class="clabel"><div class="ct" id="covtitle">${esc(title)}</div><div class="cy">${y}</div><div class="cs">Daybook planner</div></div></div>
+    <div class="coverbook cv-${cover}"><div class="clabel">${s.logo ? `<img class="clogo" src="${esc(s.logo)}" alt="">` : ""}<div class="ct" id="covtitle">${esc(title)}</div><div class="cy">${y}</div><div class="cs">Daybook planner</div></div></div>
     <div class="sec">
       <div><p class="lbl">Contents</p><div class="index">${idx}</div></div>
       <div><button class="btn ghost" data-act="menu">Change cover, name or theme</button></div>
@@ -1182,14 +1193,18 @@ function renderMenu(){
     <div><p class="lbl">Light style</p><div class="opts">${sw(LIGHT_THEMES,"light",p.light)}</div></div>
     <div><p class="lbl">Dark style</p><div class="opts">${sw(DARK_THEMES,"dark",p.dark)}</div></div>
     <div><p class="lbl">Cover</p><div class="opts">${COVERS.map(([id,l]) => `<button class="sw" data-act="cover" data-c="${id}" aria-pressed="${p.cover===id}"><span class="cvt cv-${id}"></span>${l}</button>`).join("")}</div></div>
-    <div><p class="lbl">Planner name</p>${I("settings","title",{ph:"My Planner",label:"Planner name"})}<p class="hint">Shown on the cover and in the Home greeting.</p></div>`;
+    <div><p class="lbl">Title</p>${I("settings","title",{ph:"My Planner",label:"Planner title"})}<p class="hint">Shown next to your logo, on the cover and in the Home greeting. Leave it blank to show just the logo.</p></div>
+    <div><p class="lbl">Logo</p><div class="logorow"><span class="logoprev">${get("settings").logo ? `<img src="${esc(get("settings").logo)}" alt="Your logo">` : LOGO_SVG}</span>
+      <div class="stack" style="gap:8px"><label class="btn ghost" for="logo-file">${get("settings").logo ? "Change logo" : "Upload logo"}</label><input type="file" id="logo-file" accept="image/*" hidden>
+      ${get("settings").logo ? `<button class="btn ghost" data-act="logorm">Use the default logo</button>` : ""}</div></div>
+      <p class="hint">PNG, JPG, SVG or WebP. Square images look best. It's resized automatically.</p><p class="hint err" id="logo-err" hidden></p></div>`;
 }
 function openMenu(){ closeSheets(); S.menu = true; renderMenu(); document.getElementById("drawer").hidden = false; document.getElementById("scrim").hidden = false; const c = document.querySelector('#drawer [data-act="close"]'); if(c) c.focus(); }
 function closeSheets(){ S.sheet = null; ["more","qadd"].forEach(id => document.getElementById(id).hidden = true); }
 function closeMenu(){
   const was = S.sheet;
   S.menu = false; closeSheets(); document.getElementById("drawer").hidden = true; document.getElementById("scrim").hidden = true;
-  const b = was==="more" ? document.getElementById("bn-more") : was==="qadd" ? document.querySelector(".fab") : document.querySelector('.topbar [data-act="menu"]'); if(b) b.focus();
+  const b = was==="more" ? document.getElementById("bn-more") : was==="qadd" ? document.querySelector(".fab") : document.querySelector('.topbar .cbtn'); if(b) b.focus();
 }
 function openSheet(id){
   S.menu = false; document.getElementById("drawer").hidden = true; closeSheets(); S.sheet = id;
@@ -1512,6 +1527,39 @@ function isDark(mode){
   if(dt==="dark") return true; if(dt==="light") return false;
   return !!(mq && mq.matches);
 }
+const LOGO_SVG = `<svg viewBox="0 0 44 44" aria-hidden="true"><rect x="30" y="10" width="9" height="8" rx="2.5" fill="var(--t3)"/><rect x="30" y="20" width="9" height="8" rx="2.5" fill="var(--t4)"/><rect x="30" y="30" width="9" height="7" rx="2.5" fill="var(--t6)"/><rect x="9" y="5" width="26" height="34" rx="6" fill="var(--accent)"/><rect x="14" y="10" width="16" height="24" rx="3" fill="var(--paper)" opacity=".16"/><path d="M15.5 22.5l4.5 4.5 8.5-10" fill="none" stroke="var(--paper)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><g fill="var(--ink)"><rect x="5" y="11" width="9" height="3.6" rx="1.8"/><rect x="5" y="20.2" width="9" height="3.6" rx="1.8"/><rect x="5" y="29.4" width="9" height="3.6" rx="1.8"/></g></svg>`;
+let brandKey = null;
+function applyBrand(){
+  const s = get("settings"), title = (s.title||"").trim(), key = (s.logo||"") + "|" + title;
+  if(key === brandKey) return; brandKey = key;
+  const el = document.getElementById("brand");
+  el.innerHTML = (s.logo ? `<img src="${esc(s.logo)}" alt="">` : LOGO_SVG) + (title ? `<span class="bt">${esc(title)}</span>` : "");
+  el.setAttribute("aria-label", (title || "Planner") + " cover");
+  try { document.title = title || "Daybook Planner"; } catch(e) {}
+  try {
+    let ic = document.querySelector('link[rel="icon"]');
+    if(!ic){ ic = document.createElement("link"); ic.rel = "icon"; document.head.appendChild(ic); }
+    ic.href = s.logo || ("data:image/svg+xml," + encodeURIComponent(LOGO_SVG.replace('aria-hidden="true"','xmlns="http://www.w3.org/2000/svg"').replace(/var\(--t3\)/g,"#F1E1A6").replace(/var\(--t4\)/g,"#E8C5D2").replace(/var\(--t6\)/g,"#BCDAD0").replace(/var\(--accent\)/g,"#4E7A57").replace(/var\(--paper\)/g,"#FCFCF8").replace(/var\(--ink\)/g,"#2B302C")));
+  } catch(e) {}
+}
+function logoError(t){ const el = document.getElementById("logo-err"); if(el){ el.textContent = t; el.hidden = !t; } }
+function handleLogo(file){
+  logoError("");
+  if(!file) return;
+  if(!/^image\//.test(file.type || "")) return logoError("That file isn't an image. Choose a PNG, JPG, SVG or WebP.");
+  if(file.size > 20*1024*1024) return logoError("That image is over 20 MB. Choose a smaller one.");
+  const url = URL.createObjectURL(file), img = new Image();
+  img.onload = () => {
+    const max = 192, nw = img.naturalWidth || max, nh = img.naturalHeight || max, r = Math.min(1, max / Math.max(nw, nh));
+    const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(nw*r)); c.height = Math.max(1, Math.round(nh*r));
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+    let data = ""; try { data = c.toDataURL("image/webp", 0.9); } catch(e) {}
+    if(!data.startsWith("data:image/webp")) data = c.toDataURL("image/png");
+    edit("settings", "logo", data); applyBrand(); renderMenu(); if(S.view==="cover") render(); toast("Logo updated");
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); logoError("That image couldn't be opened. Try a PNG or JPG."); };
+  img.src = url;
+}
 function applySettings(){
   const p = prefs(), dark = isDark(p.mode);
   const want = dark ? "dark-"+p.dark : "theme-"+p.light;
@@ -1524,6 +1572,7 @@ try { new MutationObserver(() => applySettings()).observe(document.documentEleme
 function render(){
   dirty = false;
   applySettings();
+  applyBrand();
   document.getElementById("yr").textContent = Y();
   tabsEl.querySelectorAll(".ttab").forEach(b => { if(b.dataset.go===S.view) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
   stabsEl.querySelectorAll(".stab").forEach(b => b.setAttribute("aria-current", String(+b.dataset.m===M())));
@@ -1549,13 +1598,14 @@ function onField(e){
   if(el.type==="checkbox"){ const row = el.closest(".row"); if(row && /\.done$/.test(el.dataset.p)) row.classList.toggle("done", el.checked); }
   if(S.view==="budget") paintBudget();
   if(S.view==="goals" && el.dataset.k[0]==="h") paintHabits();
-  if(el.dataset.k==="settings" && el.dataset.p==="title"){ const t = document.getElementById("covtitle"); if(t) t.textContent = el.value.trim() || "My Planner"; }
+  if(el.dataset.k==="settings" && el.dataset.p==="title"){ const t = document.getElementById("covtitle"); if(t) t.textContent = el.value.trim() || "My Planner"; applyBrand(); }
   if(el.dataset.k[0]==="n" && el.dataset.p==="title"){ const li = document.getElementById("nl-"+el.dataset.k); if(li) li.textContent = el.value || "Untitled"; }
 }
 main.addEventListener("input", onField);
 main.addEventListener("change", onField);
 const drawerEl = document.getElementById("drawer");
 drawerEl.addEventListener("input", onField);
+drawerEl.addEventListener("change", e => { if(e.target.id==="logo-file"){ handleLogo(e.target.files && e.target.files[0]); e.target.value = ""; } });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && (S.menu || S.sheet)) closeMenu(); });
 document.getElementById("qadd").addEventListener("submit", e => {
   e.preventDefault();
@@ -1625,6 +1675,7 @@ document.addEventListener("click", e => {
   else if(a==="stab"){ const nm = +b.dataset.m; S.day = new Date(y, nm, Math.min(d, dim(y,nm))); if(MONTH_AWARE.includes(S.view)) render(); else go("month"); }
   else if(a==="shift"){ shiftBy(+b.dataset.n); }
   else if(a==="menu"){ openMenu(); }
+  else if(a==="logorm"){ const doc = clone(get("settings")); delete doc.logo; put("settings", doc); applyBrand(); renderMenu(); if(S.view==="cover") render(); toast("Default logo restored"); }
   else if(a==="close"){ closeMenu(); }
   else if(a==="more"){ openSheet("more"); }
   else if(a==="qadd"){ openSheet("qadd"); }
