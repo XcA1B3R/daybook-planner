@@ -2,6 +2,14 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v1.9 · 2026-10-24
+
+- Tap a workout on the Day grid or in the Fitness log to open a details card in the planner.
+  - It shows distance, moving and elapsed time, average and max speed (or pace for runs, walks and hikes), climbing, heart rate, power, cadence, calories and kudos when available.
+  - Strava workouts include a sketch of the route, and the card loads your Strava description, bike or shoes, and device.
+  - **Open on Strava**, **Show on the day** and **Delete from log** are on the card. Delete asks you to tap twice.
+- Strava imports now save those extra details. Tap **Re-check this year** once to add them to workouts already imported.
+
 ## v1.8 · 2026-10-24
 
 - The Fitness page opens with a **year so far** summary for the selected year: total workouts, hours, miles, active days and climbing.

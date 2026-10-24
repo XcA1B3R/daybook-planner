@@ -131,6 +131,22 @@ label.btn{display:inline-block;cursor:pointer}
 .mb em{font-style:normal;font:500 9.5px var(--mono);color:var(--muted)}
 .mb.cur em{color:var(--ink);font-weight:700}
 .mb.fut i{opacity:.35}
+.wkrow{cursor:pointer}
+.wkrow:hover td{background:color-mix(in srgb, var(--accent) 6%, transparent)}
+.wkrow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+button.ti.ta{border:0;border-left:3px solid #FC4C02;text-align:left;font:inherit;font-size:13px;cursor:pointer}
+.wktitle{margin:0;font:400 26px/1.15 var(--serif);text-wrap:balance}
+.bsheet > *{flex-shrink:0}
+.route{width:100%;height:auto;aspect-ratio:2/1;max-height:260px;flex:none;background:color-mix(in srgb, var(--accent) 6%, var(--paper));border:1px solid var(--line);border-radius:12px}
+.rt-halo{fill:none;stroke:var(--paper);stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.rt-line{fill:none;stroke:#FC4C02;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.rt-start{fill:var(--good);stroke:var(--paper);stroke-width:3}
+.rt-end{fill:var(--bad);stroke:var(--paper);stroke-width:3}
+.wkstats{margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.wkstats div{background:color-mix(in srgb, var(--accent) 6%, var(--paper));border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.wkstats dt{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.wkstats dd{margin:2px 0 0;font:500 17px var(--mono);font-variant-numeric:tabular-nums}
+.wkdesc{margin:0;white-space:pre-wrap;font-size:14.5px;line-height:1.5;padding:10px 12px;border-left:3px solid var(--line)}
 .stpanel{display:flex;flex-direction:column;gap:12px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--paper)}
 .sthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .sthead b{font:400 20px var(--serif)}
@@ -712,6 +728,7 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
   <div class="bsheet" id="more" role="dialog" aria-modal="true" aria-label="All sections" hidden></div>
   <div class="bsheet" id="qadd" role="dialog" aria-modal="true" aria-label="Quick add" hidden></div>
   <div class="bsheet" id="blk" role="dialog" aria-modal="true" aria-label="Edit activity" hidden></div>
+  <div class="bsheet" id="wk" role="dialog" aria-modal="true" aria-label="Workout details" hidden></div>
   <div class="toast" id="toast" role="status" hidden></div>
   <div id="tip" role="tooltip" hidden></div>
 </div>
@@ -891,7 +908,7 @@ function migrateWeeks(){
 migrateWeeks();
 
 /* ---------- state ---------- */
-const S = { bkDays: null, bkScope: null, bkUntil: null, pickBlock: null, blkEdit: null, rzArm: false, rzKeep: true, rzText: "", day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "today" };
+const S = { wk: null, wkDelArm: false, wkFrom: null, bkDays: null, bkScope: null, bkUntil: null, pickBlock: null, blkEdit: null, rzArm: false, rzKeep: true, rzText: "", day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "today" };
 
 /* ---------- Google Calendar ---------- */
 const GC = "Google Calendar";
@@ -1231,14 +1248,18 @@ function stImport(list){
     const date = loc.slice(0, 10), d = parseYmd(date), k = "f" + mk(d.getFullYear(), d.getMonth());
     (byMonth[k] = byMonth[k] || []).push({ date, type: ST_TYPES[a.sport_type] || ST_TYPES[a.type] || "Other", mins: String(Math.round((a.moving_time || a.elapsed_time || 0) / 60)),
       dist: a.distance ? (a.distance / 1609.344).toFixed(1) : "", notes: a.name || "", strava: String(a.id), at: (+loc.slice(11, 13)) * 60 + (+loc.slice(14, 16)),
-      el: Math.round((a.elapsed_time || a.moving_time || 0) / 60), elev: a.total_elevation_gain ? String(Math.round(a.total_elevation_gain * 3.28084)) : "" });
+      el: Math.round((a.elapsed_time || a.moving_time || 0) / 60), elev: a.total_elevation_gain ? String(Math.round(a.total_elevation_gain * 3.28084)) : "",
+      mv: a.moving_time || 0, et: a.elapsed_time || 0, spd: a.average_speed || 0, mspd: a.max_speed || 0,
+      hr: a.average_heartrate ? Math.round(a.average_heartrate) : 0, mhr: a.max_heartrate ? Math.round(a.max_heartrate) : 0,
+      w: a.average_watts ? Math.round(a.average_watts) : 0, cad: a.average_cadence ? Math.round(a.average_cadence) : 0,
+      kj: a.kilojoules ? Math.round(a.kilojoules) : 0, kudos: a.kudos_count || 0, poly: (a.map && a.map.summary_polyline) || "", sport: a.sport_type || a.type || "" });
   });
   let added = 0;
   Object.entries(byMonth).forEach(([k, items]) => {
     const doc = clone(get(k)); doc.log = (doc.log || []).filter(Boolean); let ch = false;
     items.forEach(it => {
       const ex = doc.log.find(e => e.strava === it.strava);
-      if(ex){ if(ex.notes !== it.notes || ex.mins !== it.mins || ex.dist !== it.dist || ex.type !== it.type || (ex.elev || "") !== it.elev){ Object.assign(ex, it); ch = true; } return; }
+      if(ex){ const sig = o => JSON.stringify(Object.keys(it).map(f => o[f] ?? "")); if(sig(ex) !== sig(it)){ Object.assign(ex, it); ch = true; } return; }
       doc.log.push(it); added++; ch = true;
     });
     if(ch) put(k, doc);
@@ -1673,16 +1694,17 @@ function resetAll(){
   closeMenu(); go("home"); paintG(); toast("Planner reset. Everything is cleared.");
 }
 function openMenu(){ closeSheets(); S.menu = true; renderMenu(); document.getElementById("drawer").hidden = false; document.getElementById("scrim").hidden = false; const c = document.querySelector('#drawer [data-act="close"]'); if(c) c.focus(); }
-function closeSheets(){ S.sheet = null; ["more","qadd","blk"].forEach(id => document.getElementById(id).hidden = true); }
+function closeSheets(){ S.sheet = null; ["more","qadd","blk","wk"].forEach(id => document.getElementById(id).hidden = true); }
 function closeMenu(){
   const was = S.sheet;
   S.menu = false; closeSheets(); document.getElementById("drawer").hidden = true; document.getElementById("scrim").hidden = true;
-  const b = was==="more" ? document.getElementById("bn-more") : was==="qadd" ? document.querySelector(".fab") : was==="blk" ? null : document.querySelector('.topbar .cbtn'); if(b) b.focus();
+  const b = was==="wk" ? S.wkFrom : was==="more" ? document.getElementById("bn-more") : was==="qadd" ? document.querySelector(".fab") : was==="blk" ? null : document.querySelector('.topbar .cbtn'); if(b) b.focus();
 }
 function openSheet(id){
   S.menu = false; document.getElementById("drawer").hidden = true; closeSheets(); S.sheet = id;
   const el = document.getElementById(id);
-  if(id==="blk"){
+  if(id==="wk"){ el.innerHTML = wkSheet(); }
+  else if(id==="blk"){
     const b = findBlock(S.blkEdit); if(!b) return;
     if(S.bkDays === null) S.bkDays = [...(b.days||[])];
     if(S.bkScope === null) S.bkScope = "one";
@@ -1818,7 +1840,7 @@ function vDay(){
   const items = [
     ...timed.map(e => { const a = sameDay(e.start, d) ? e.start.getHours()*60 + e.start.getMinutes() : 0; const z = sameDay(e.end, d) ? e.end.getHours()*60 + e.end.getMinutes() : 1440; return {kind:"e", e, s:a, end:Math.max(a+15, z)}; }),
     ...blocks.map(b => ({kind:"b", b, s:b.s, end:b.s + b.dur})),
-    ...(((store.get("f" + mk(d.getFullYear(), d.getMonth())) || {}).log) || []).filter(f => f && f.date === key && f.at != null).map(f => ({kind:"a", f, s: f.at, end: f.at + Math.max(20, +f.el || +f.mins || 30)})),
+    ...(((store.get("f" + mk(d.getFullYear(), d.getMonth())) || {}).log) || []).map((f, i) => ({f, i})).filter(({f}) => f && f.date === key && f.at != null).map(({f, i}) => ({kind:"a", f, fi: i, fk: "f" + mk(d.getFullYear(), d.getMonth()), s: f.at, end: f.at + Math.max(20, +f.el || +f.mins || 30)})),
   ].sort((x,y) => x.s - y.s || y.end - x.end);
   /* side-by-side columns for overlapping items */
   let cluster = [], cEnd = -1;
@@ -1829,7 +1851,7 @@ function vDay(){
   const tiHtml = it => {
     const short = (it.end - it.s) < 45;
     if(it.kind==="a"){ const f = it.f, info = [f.dist ? f.dist + " mi" : "", f.mins ? f.mins + " min" : ""].filter(Boolean).join(" · ");
-      return `<a class="ti ta${short?" short":""}" href="https://www.strava.com/activities/${esc(f.strava || "")}" target="_blank" rel="noopener" style="${pos(it)}" title="Done: ${esc(f.notes || f.type)} · ${esc(info)}"><div class="tl"><i class="ck2" aria-hidden="true">✓</i><span>${esc(f.notes || f.type)}</span></div>${short ? "" : `<b>${esc(info)}</b>`}</a>`; }
+      return `<button type="button" class="ti ta${short?" short":""}" data-act="wkopen" data-k="${it.fk}" data-i="${it.fi}" style="${pos(it)}" title="Done: ${esc(f.notes || f.type)} · ${esc(info)}" aria-label="Done: ${esc(f.notes || f.type)}, ${esc(info)}. Tap for details."><div class="tl"><i class="ck2" aria-hidden="true">✓</i><span>${esc(f.notes || f.type)}</span></div>${short ? "" : `<b>${esc(info)}</b>`}</button>`; }
     if(it.kind==="e"){ const e = it.e, inner = `<div class="tl"><span>${esc(e.title)}</span></div>${short?"":`<b>${fmtMin(it.s)}–${fmtMin(it.end)}</b>`}`;
       return e.link ? `<a class="ti te${short?" short":""}" href="${esc(e.link)}" target="_blank" rel="noopener" style="${pos(it)}${e.color?`;--ec:${e.color}`:""}" title="${esc(e.title)} · ${fmtMin(it.s)}–${fmtMin(it.end)}">${inner}</a>` : `<div class="ti te${short?" short":""}" style="${pos(it)}${e.color?`;--ec:${e.color}`:""}">${inner}</div>`; }
     const b = it.b, L = BT[b.t].l;
@@ -2008,7 +2030,7 @@ function vFitness(){
   const bars = weeks.map(w => { const d = parseYmd(w.key); return `<div class="bar"><b>${w.mins||""}</b><i style="height:${Math.round(w.mins/max*100)}%"></i><span>${MON3[d.getMonth()]} ${d.getDate()}</span></div>`; }).join("");
   const rows = log.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(e => {
     const d = e.date ? parseYmd(e.date) : null;
-    return `<tr><td class="mono">${d?`${DOW[dowIdx(d)]} ${MON3[d.getMonth()]} ${d.getDate()}`:"—"}</td><td><span class="stk" style="--c:var(--sec)">${esc(e.type||"Other")}</span></td><td class="mono">${e.mins?esc(e.mins)+" min":""}</td><td class="mono">${e.dist?esc(e.dist)+" mi":""}</td><td>${e.strava ? `<a class="stbadge" href="https://www.strava.com/activities/${esc(e.strava)}" target="_blank" rel="noopener" title="Open on Strava">Strava</a> ` : ""}${esc(e.notes||"")}</td><td class="x"><button class="xb" data-act="fitdel" data-i="${e.i}" aria-label="Delete workout">×</button></td></tr>`;
+    return `<tr class="wkrow" data-act="wkopen" data-k="${k}" data-i="${e.i}" tabindex="0" aria-label="${esc((e.notes || e.type || "Workout") + ", " + (d ? MON3[d.getMonth()] + " " + d.getDate() : ""))}. Open details."><td class="mono">${d?`${DOW[dowIdx(d)]} ${MON3[d.getMonth()]} ${d.getDate()}`:"—"}</td><td><span class="stk" style="--c:var(--sec)">${esc(e.type||"Other")}</span></td><td class="mono">${e.mins?esc(e.mins)+" min":""}</td><td class="mono">${e.dist?esc(e.dist)+" mi":""}</td><td>${e.strava ? `<span class="stbadge">Strava</span> ` : ""}${esc(e.notes||"")}</td><td class="x"><button class="xb" data-act="fitdel" data-i="${e.i}" aria-label="Delete workout">×</button></td></tr>`;
   }).join("");
   const h = Math.floor(mins/60), mm = Math.round(mins%60);
   return head(`Fitness · ${MONTHS[m]}`, `Log rides, runs, gym sessions and anything else that moves you`, monthChips()) +
@@ -2258,6 +2280,92 @@ main.addEventListener("submit", e => {
   (doc.log = doc.log || []).push({date, type:document.getElementById("fx-type").value, mins, dist, notes:document.getElementById("fx-note").value.trim()});
   put(k, doc); render();
 });
+/* ---------- workout details ---------- */
+function decodePolyline(str){
+  const pts = []; let i = 0, lat = 0, lng = 0;
+  while(i < str.length){
+    for(const k of [0, 1]){
+      let res = 0, shift = 0, b;
+      do { b = str.charCodeAt(i++) - 63; res |= (b & 31) << shift; shift += 5; } while(b >= 32 && i <= str.length);
+      const d = (res & 1) ? ~(res >> 1) : (res >> 1);
+      if(k === 0) lat += d; else lng += d;
+    }
+    pts.push([lat / 1e5, lng / 1e5]);
+  }
+  return pts;
+}
+function routeSvg(poly){
+  let pts; try { pts = decodePolyline(poly); } catch(e) { return ""; }
+  if(pts.length < 2) return "";
+  const lat0 = pts.reduce((a,p) => a + p[0], 0) / pts.length, kx = Math.cos(lat0 * Math.PI / 180);
+  const xy = pts.map(([la, lo]) => [lo * kx, -la]);
+  const xs = xy.map(p => p[0]), ys = xy.map(p => p[1]), minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const W = 600, H = 300, pad = 18, sc = Math.min((W - 2*pad) / ((maxX - minX) || 1e-9), (H - 2*pad) / ((maxY - minY) || 1e-9));
+  const ox = (W - (maxX - minX) * sc) / 2, oy = (H - (maxY - minY) * sc) / 2;
+  const P = xy.map(([x, y]) => [ox + (x - minX) * sc, oy + (y - minY) * sc]);
+  const d = "M" + P.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join("L");
+  const [s0, e0] = [P[0], P[P.length - 1]];
+  return `<svg class="route" viewBox="0 0 ${W} ${H}" role="img" aria-label="Route outline"><path d="${d}" class="rt-halo"/><path d="${d}" class="rt-line"/><circle cx="${s0[0].toFixed(1)}" cy="${s0[1].toFixed(1)}" r="7" class="rt-start"/><circle cx="${e0[0].toFixed(1)}" cy="${e0[1].toFixed(1)}" r="7" class="rt-end"/></svg>`;
+}
+const PACE_TYPES = new Set(["Run", "Walk", "Hike"]);
+const fmtDur = sec => { sec = Math.round(sec); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s2 = sec % 60; return h ? `${h}:${pad(m)}:${pad(s2)}` : `${m}:${pad(s2)}`; };
+const paceTxt = mps => mps > 0 ? fmtDur(1609.344 / mps) + " /mi" : "";
+const mphTxt = mps => mps > 0 ? (mps * 2.23694).toFixed(1) + " mph" : "";
+ST.detail = {};
+async function stDetail(id){
+  if(ST.detail[id] || G.mode !== "direct" || !stConnected()) return;
+  ST.detail[id] = { loading: true };
+  try {
+    const tok = await stAccess();
+    const r = await fetch(`https://www.strava.com/api/v3/activities/${encodeURIComponent(id)}`, { headers: { Authorization: "Bearer " + tok } });
+    if(!r.ok) throw new Error(String(r.status));
+    const j = await r.json();
+    ST.detail[id] = { cal: j.calories ? Math.round(j.calories) : 0, desc: j.description || "", device: j.device_name || "", gear: j.gear && j.gear.name || "", poly: j.map && (j.map.polyline || j.map.summary_polyline) || "" };
+  } catch(e){ ST.detail[id] = { failed: true }; }
+  if(S.sheet === "wk" && S.wk && wkEntry() && wkEntry().strava === id) document.getElementById("wk").innerHTML = wkSheet();
+}
+function wkEntry(){ return S.wk ? ((get(S.wk.k).log || [])[S.wk.i]) : null; }
+function wkSheet(){
+  const f = wkEntry(); if(!f) return `<div class="grab"></div><header><h2>Workout</h2><button class="iconb" data-act="close" aria-label="Close">×</button></header><p class="muted">This workout is no longer in your log.</p>`;
+  const d = parseYmd(f.date), det = f.strava ? (ST.detail[f.strava] || {}) : {};
+  const startTxt = f.at != null ? fmtMin(f.at) : "", endTxt = f.at != null && (f.et || f.el) ? fmtMin(f.at + (f.et ? f.et / 60 : +f.el)) : "";
+  const pace = PACE_TYPES.has(f.type);
+  const mv = f.mv || (+f.mins * 60), dist = num(f.dist);
+  const avg = f.spd || (mv && dist ? dist * 1609.344 / mv : 0);
+  const stats = [
+    ["Distance", dist ? `${fmtNum(dist, dist < 10 ? 2 : 1)} mi` : ""],
+    ["Moving time", mv ? fmtDur(mv) : ""],
+    ["Elapsed time", f.et && Math.abs(f.et - mv) > 30 ? fmtDur(f.et) : ""],
+    [pace ? "Avg pace" : "Avg speed", avg ? (pace ? paceTxt(avg) : mphTxt(avg)) : ""],
+    [pace ? "Best pace" : "Max speed", f.mspd ? (pace ? paceTxt(f.mspd) : mphTxt(f.mspd)) : ""],
+    ["Climbing", num(f.elev) ? `${fmtNum(num(f.elev))} ft` : ""],
+    ["Avg heart rate", f.hr ? `${f.hr} bpm` : ""],
+    ["Max heart rate", f.mhr ? `${f.mhr} bpm` : ""],
+    ["Avg power", f.w ? `${f.w} W` : ""],
+    ["Cadence", f.cad ? `${f.cad} ${f.type === "Ride" ? "rpm" : "spm"}` : ""],
+    ["Calories", det.cal ? fmtNum(det.cal) : f.kj ? `~${fmtNum(f.kj)}` : ""],
+    ["Kudos", f.kudos ? String(f.kudos) : ""],
+  ].filter(([, v]) => v);
+  const poly = det.poly || f.poly || "";
+  const extra = [det.gear, det.device].filter(Boolean).join(" · ");
+  return `<div class="grab"></div>
+    <header><div class="bkhead"><span class="tchip" style="--c:${tc(FIT_COLOR[f.type] || 3)}">${esc(f.type || "Workout")}</span>${f.strava ? `<span class="stbadge">Strava</span>` : ""}</div><button class="iconb" data-act="close" aria-label="Close">×</button></header>
+    <div><h2 class="wktitle">${esc(f.notes || f.type || "Workout")}</h2>
+      <p class="muted" style="margin:2px 0 0">${DOWL[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}${startTxt ? ` · ${startTxt}${endTxt ? "–" + endTxt : ""}` : ""}</p></div>
+    ${poly ? routeSvg(poly) : ""}
+    ${stats.length ? `<dl class="wkstats">${stats.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : `<p class="muted">No details recorded for this workout.</p>`}
+    ${det.desc ? `<p class="wkdesc">${esc(det.desc)}</p>` : ""}
+    ${extra ? `<p class="hint" style="margin:0">${esc(extra)}</p>` : ""}
+    ${det.loading ? `<p class="hint" style="margin:0">Loading more from Strava…</p>` : ""}
+    <div class="gbtns" style="margin:0">${f.strava ? `<a class="btn" href="https://www.strava.com/activities/${esc(f.strava)}" target="_blank" rel="noopener" style="text-decoration:none">Open on Strava</a>` : ""}<button class="btn ghost" data-act="wkday">Show on the day</button><button class="danger" data-act="wkdel">${S.wkDelArm ? "Tap again to delete" : "Delete from log"}</button></div>
+    ${f.strava && S.wkDelArm ? `<p class="hint" style="margin:0">Deleting removes it from the planner only, not from Strava. It won't come back unless you tap Re-check this year.</p>` : ""}`;
+}
+function openWorkout(k, i, from){
+  S.wk = { k, i: +i }; S.wkDelArm = false; S.wkFrom = from || null;
+  openSheet("wk");
+  const f = wkEntry(); if(f && f.strava) stDetail(f.strava);
+}
+
 /* ---------- block lookup and updates (one-off or repeating) ---------- */
 function findBlock(id){ return blocksOf(ymd(S.day)).find(b => b.id===id); }
 function editRec(fn){ const doc = clone(get("rec")); doc.series = (doc.series||[]).filter(Boolean); fn(doc); put("rec", doc); }
@@ -2401,6 +2509,8 @@ document.addEventListener("pointerup", e => {
 document.addEventListener("pointercancel", e => { if(DR.src && e.pointerId === DR.id){ if(DR.on) endDrag(false); else DR.src = null; } });
 document.addEventListener("keydown", e => {
   if(e.key==="Escape" && S.pickBlock && !S.sheet){ S.pickBlock = null; render(); return; }
+  const wr = e.target.closest && e.target.closest("tr.wkrow");
+  if(wr && e.target === wr && (e.key==="Enter" || e.key===" ")){ e.preventDefault(); openWorkout(wr.dataset.k, wr.dataset.i, wr); return; }
   const tb = e.target.closest && e.target.closest(".tb");
   if(tb && (e.key==="Enter" || e.key===" ")){ e.preventDefault(); tapBlockEl(tb); }
 });
@@ -2450,6 +2560,12 @@ document.addEventListener("click", e => {
   else if(a==="stab"){ const nm = +b.dataset.m; S.day = new Date(y, nm, Math.min(d, dim(y,nm))); if(MONTH_AWARE.includes(S.view)) render(); else go("month"); }
   else if(a==="shift"){ shiftBy(+b.dataset.n); }
   else if(a==="menu"){ openMenu(); }
+  else if(a==="wkopen"){ if(e.target.closest('[data-act="fitdel"]')) return; openWorkout(b.dataset.k, b.dataset.i, b); }
+  else if(a==="wkday"){ const f = wkEntry(); if(f){ closeMenu(); S.day = parseYmd(f.date); go("day"); } }
+  else if(a==="wkdel"){
+    if(!S.wkDelArm){ S.wkDelArm = true; document.getElementById("wk").innerHTML = wkSheet(); return; }
+    const doc = clone(get(S.wk.k)); const rm = (doc.log || []).splice(S.wk.i, 1)[0]; put(S.wk.k, doc); closeMenu(); render(); if(rm) toast(`Deleted ${rm.notes || rm.type} from your log`);
+  }
   else if(a==="stconnect"){ stAuthorize(); }
   else if(a==="stsync"){ stSync(false); }
   else if(a==="stfull"){ stSync(true); }
