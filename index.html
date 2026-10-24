@@ -111,6 +111,18 @@ button{font:inherit;color:inherit;cursor:pointer}
 .logoprev img,.logoprev svg{width:56px;height:56px;object-fit:contain;display:block}
 label.btn{display:inline-block;cursor:pointer}
 .hint.err{color:var(--bad)}
+.stpanel{display:flex;flex-direction:column;gap:12px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--paper)}
+.sthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sthead b{font:400 20px var(--serif)}
+.sticon{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:#FC4C02;color:#fff;font:800 14px var(--body)}
+.stkeys{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stkeys label{display:flex;flex-direction:column;gap:2px}
+.stpanel details{font-size:13.5px;border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.stpanel summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.stbadge{display:inline-block;font:700 10.5px var(--body);letter-spacing:.04em;text-transform:uppercase;color:#fff;background:#FC4C02;padding:1px 6px;border-radius:4px;text-decoration:none;vertical-align:1px}
+.ta{background:color-mix(in srgb, #FC4C02 14%, var(--paper));border-left:3px solid #FC4C02;color:var(--ink);text-decoration:none}
+.ta .ck2{font-style:normal;font-weight:800;color:#FC4C02;flex:none}
+@media (max-width:520px){ .stkeys{grid-template-columns:1fr} }
 .gsetup{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px}
 .gsetup details{font-size:13.5px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--paper)}
 .gsetup summary{cursor:pointer;font-weight:600;color:var(--accent)}
@@ -1136,6 +1148,143 @@ function dRevoke(){
   try { if(G.tok && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(G.tok.access_token, () => {}); } catch(e) {}
   G.tok = null; saveTok(); G.dLast = {}; G.cals = []; G.updated = 0; try { localStorage.removeItem(GCACHE); } catch(e) {}
 }
+/* ---------- Strava (GitHub site): keys and tokens stay in this browser only ---------- */
+const SKEY = "daybook-strava";
+const ST = { cfg: {}, busy: false, msg: "", err: false };
+function stLoad(){ try { ST.cfg = JSON.parse(localStorage.getItem(SKEY) || "{}") || {}; } catch(e){ ST.cfg = {}; } }
+function stSave(){ try { localStorage.setItem(SKEY, JSON.stringify(ST.cfg)); } catch(e) {} }
+stLoad();
+const stHasKeys = () => !!(String(ST.cfg.clientId||"").trim() && String(ST.cfg.clientSecret||"").trim());
+const stConnected = () => !!ST.cfg.refresh_token;
+const stRedirect = () => location.origin + location.pathname;
+const ST_TYPES = { Ride:"Ride", VirtualRide:"Ride", EBikeRide:"Ride", GravelRide:"Ride", MountainBikeRide:"Ride", EMountainBikeRide:"Ride", Velomobile:"Ride", Handcycle:"Ride",
+  Run:"Run", TrailRun:"Run", VirtualRun:"Run", Walk:"Walk", Hike:"Hike", Swim:"Swim",
+  WeightTraining:"Strength", Crossfit:"Strength", Workout:"Strength", HighIntensityIntervalTraining:"Strength",
+  Kayaking:"Kayak", Canoeing:"Kayak", StandUpPaddling:"Kayak", Rowing:"Kayak", Yoga:"Mobility", Pilates:"Mobility" };
+function stSay(msg, err){ ST.msg = msg; ST.err = !!err; softRender(); }
+function stAuthorize(){
+  if(!stHasKeys()){ stSay("Enter your Strava Client ID and Client Secret first.", true); return; }
+  ST.cfg.oauthState = Math.random().toString(36).slice(2, 10); stSave();
+  const q = new URLSearchParams({ client_id: String(ST.cfg.clientId).trim(), redirect_uri: stRedirect(), response_type: "code", approval_prompt: "auto", scope: "read,activity:read_all", state: "strava-" + ST.cfg.oauthState });
+  location.href = "https://www.strava.com/oauth/authorize?" + q.toString();
+}
+async function stToken(extra){
+  let r;
+  try { r = await fetch("https://www.strava.com/oauth/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ client_id: String(ST.cfg.clientId).trim(), client_secret: String(ST.cfg.clientSecret).trim(), ...extra }) }); }
+  catch(e){ throw { code: navigator.onLine === false ? "offline" : "blocked" }; }
+  let j = {}; try { j = await r.json(); } catch(e) {}
+  if(!r.ok) throw { code: r.status === 401 || r.status === 400 ? "auth" : "http", message: (j && (j.message || (j.errors && j.errors.map(x => x.field + " " + x.code).join(", ")))) || String(r.status) };
+  ST.cfg.access_token = j.access_token; if(j.refresh_token) ST.cfg.refresh_token = j.refresh_token; ST.cfg.expires_at = j.expires_at;
+  if(j.athlete) ST.cfg.athlete = [j.athlete.firstname, j.athlete.lastname].filter(Boolean).join(" ");
+  stSave();
+}
+async function stAccess(){
+  if(ST.cfg.access_token && (ST.cfg.expires_at || 0) * 1000 > Date.now() + 120000) return ST.cfg.access_token;
+  await stToken({ grant_type: "refresh_token", refresh_token: ST.cfg.refresh_token });
+  return ST.cfg.access_token;
+}
+function stErrText(e){
+  if(e.code === "blocked") return "Strava blocked the request from this web page, so option 2 won't work here. Tell Claude, and we'll switch to the Cloudflare Worker approach (option 3).";
+  if(e.code === "offline") return "You're offline. Strava will sync next time you open the planner with a connection.";
+  if(e.code === "rate") return "Strava is limiting requests right now. Try again in about 15 minutes.";
+  if(e.code === "auth") return "Strava didn't accept the sign-in (" + (e.message || "check your Client ID and Secret") + "). Check the keys and connect again.";
+  return "Couldn't sync with Strava" + (e.message ? " (" + e.message + ")" : "") + ".";
+}
+async function stHandleReturn(){
+  const q = new URLSearchParams(location.search), state = q.get("state") || "";
+  if(!state.startsWith("strava-")) return false;
+  try { history.replaceState(null, "", location.pathname + "#fitness"); } catch(e) {}
+  S.view = "fitness";
+  if(q.get("error")){ stSay("Strava connection was cancelled.", true); return true; }
+  if(state !== "strava-" + ST.cfg.oauthState){ stSay("That Strava sign-in didn't match this device. Tap Connect Strava to try again.", true); return true; }
+  const scope = q.get("scope") || "";
+  if(!/activity:read/.test(scope)){ stSay("Strava didn't share your activities. Connect again and leave “View data about your activities” ticked.", true); return true; }
+  try { await stToken({ grant_type: "authorization_code", code: q.get("code") }); delete ST.cfg.oauthState; ST.cfg.after = 0; stSave(); toast("Strava connected"); await stSync(true); }
+  catch(e){ stSay(stErrText(e), true); }
+  return true;
+}
+function stImport(list){
+  const byMonth = {};
+  list.forEach(a => {
+    const loc = String(a.start_date_local || a.start_date || ""); if(loc.length < 16) return;
+    const date = loc.slice(0, 10), d = parseYmd(date), k = "f" + mk(d.getFullYear(), d.getMonth());
+    (byMonth[k] = byMonth[k] || []).push({ date, type: ST_TYPES[a.sport_type] || ST_TYPES[a.type] || "Other", mins: String(Math.round((a.moving_time || a.elapsed_time || 0) / 60)),
+      dist: a.distance ? (a.distance / 1609.344).toFixed(1) : "", notes: a.name || "", strava: String(a.id), at: (+loc.slice(11, 13)) * 60 + (+loc.slice(14, 16)),
+      el: Math.round((a.elapsed_time || a.moving_time || 0) / 60) });
+  });
+  let added = 0;
+  Object.entries(byMonth).forEach(([k, items]) => {
+    const doc = clone(get(k)); doc.log = (doc.log || []).filter(Boolean); let ch = false;
+    items.forEach(it => {
+      const ex = doc.log.find(e => e.strava === it.strava);
+      if(ex){ if(ex.notes !== it.notes || ex.mins !== it.mins || ex.dist !== it.dist || ex.type !== it.type){ Object.assign(ex, it); ch = true; } return; }
+      doc.log.push(it); added++; ch = true;
+    });
+    if(ch) put(k, doc);
+  });
+  return added;
+}
+async function stSync(full){
+  if(ST.busy || !stConnected()) return;
+  ST.busy = true; stSay("Syncing with Strava…");
+  try {
+    const tok = await stAccess();
+    const startOfYear = Math.floor(new Date(new Date().getFullYear(), 0, 1).getTime() / 1000);
+    const after = full || !ST.cfg.after ? startOfYear : ST.cfg.after;
+    const all = [];
+    for(let page = 1; page <= 10; page++){
+      let r;
+      try { r = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=100&page=${page}`, { headers: { Authorization: "Bearer " + tok } }); }
+      catch(e){ throw { code: navigator.onLine === false ? "offline" : "blocked" }; }
+      if(r.status === 401){ ST.cfg.access_token = ""; stSave(); throw { code: "auth", message: "sign-in expired" }; }
+      if(r.status === 429) throw { code: "rate" };
+      if(!r.ok) throw { code: "http", message: String(r.status) };
+      const arr = await r.json(); if(!Array.isArray(arr)) break;
+      all.push(...arr); if(arr.length < 100) break;
+    }
+    const added = stImport(all);
+    let latest = ST.cfg.after || 0;
+    all.forEach(a => { const t = Math.floor(new Date(a.start_date).getTime() / 1000); if(t > latest) latest = t; });
+    ST.cfg.after = Math.max(after, latest - 3600); ST.cfg.lastSync = Date.now(); stSave();
+    stSay(added ? `Added ${added} workout${added === 1 ? "" : "s"} from Strava.` : "Up to date with Strava.");
+    if(added) toast(ST.msg);
+  } catch(e){ stSay(stErrText(e), true); }
+  finally { ST.busy = false; softRender(); }
+}
+function stDisconnect(){
+  const tok = ST.cfg.access_token;
+  if(tok){ try { fetch("https://www.strava.com/oauth/deauthorize", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ access_token: tok }) }).catch(() => {}); } catch(e) {} }
+  ["access_token","refresh_token","expires_at","athlete","after","lastSync","oauthState"].forEach(f => delete ST.cfg[f]); stSave();
+  stSay("Strava disconnected. Workouts already imported stay in your log.");
+}
+function stAutoSync(){ if(G.mode === "direct" && stConnected() && Date.now() - (ST.cfg.lastSync || 0) > 30*60*1000) stSync(false); }
+function stPanel(){
+  if(G.mode !== "direct") return `<div class="stpanel"><div class="sthead"><span class="sticon" aria-hidden="true">S</span><b>Strava</b></div><p class="hint" style="margin:0">Strava sync works on your GitHub site: <span class="copyme">https://xca1b3r.github.io/daybook-planner/</span></p></div>`;
+  const last = ST.cfg.lastSync ? new Date(ST.cfg.lastSync) : null;
+  const status = stConnected() ? `Connected${ST.cfg.athlete ? " as " + esc(ST.cfg.athlete) : ""}${last ? ` · synced ${sameDay(last, todayDate()) ? fmtTime(last) : MON3[last.getMonth()] + " " + last.getDate()}` : ""}` : stHasKeys() ? "Ready to connect" : "Not set up";
+  let body;
+  if(stConnected()){
+    body = `<div class="gbtns" style="margin:0"><button class="btn" data-act="stsync"${ST.busy ? " disabled" : ""}>${ST.busy ? "Syncing…" : "Sync now"}</button><button class="btn ghost" data-act="stfull"${ST.busy ? " disabled" : ""}>Re-check this year</button><button class="btn ghost" data-act="stdisc">Disconnect</button></div>`;
+  } else {
+    body = `<div class="stkeys">
+        <label><span class="cap">Client ID</span><input class="ln" id="st-id" inputmode="numeric" autocomplete="off" value="${esc(ST.cfg.clientId || "")}" placeholder="123456"></label>
+        <label><span class="cap">Client Secret</span><input class="ln" id="st-secret" type="password" autocomplete="off" value="${esc(ST.cfg.clientSecret || "")}" placeholder="Paste from Strava"></label>
+      </div>
+      <div class="gbtns" style="margin:0"><button class="btn" data-act="stconnect">Connect Strava</button></div>
+      <details${stHasKeys() ? "" : " open"}><summary>How to get these (about 5 minutes, free)</summary>
+        <ol class="steps">
+          <li>On a computer, sign in at <a href="https://www.strava.com/settings/api" target="_blank" rel="noopener">strava.com/settings/api</a> and create an app.</li>
+          <li>Name it something like "Daybook", pick any category, and enter <code>${esc(stRedirect())}</code> as the website.</li>
+          <li>For <b>Authorization Callback Domain</b>, enter <code>${esc(location.hostname || "xca1b3r.github.io")}</code>. Upload any image as the app icon if Strava asks for one.</li>
+          <li>Copy the <b>Client ID</b> and <b>Client Secret</b> into the boxes above, then tap <b>Connect Strava</b>.</li>
+        </ol>
+        <p class="hint">Your keys and Strava sign-in are saved only in this browser. They are never added to your GitHub repo. Set this up on each device you use.</p>
+      </details>`;
+  }
+  return `<div class="stpanel"><div class="sthead"><span class="sticon" aria-hidden="true">S</span><b>Strava</b><span class="muted" style="font-size:13px">${status}</span></div>${body}${ST.msg ? `<p class="hint${ST.err ? " err" : ""}" role="status" style="margin:0">${esc(ST.msg)}</p>` : ""}</div>`;
+}
+
 function startDirect(){
   G.mode = "direct"; loadTok(); loadGCache();
   const cid = (get("settings").gClientId || "").trim();
@@ -1144,6 +1293,9 @@ function startDirect(){
   else if(tokValid()){ G.state = "ok"; dCalendars().then(() => dSync(true)); }
   else G.state = "needs_tap";
   setInterval(() => { if(document.visibilityState === "visible") dSync(false); }, 5*60*1000);
+  stHandleReturn().then(handled => { if(handled) render(); else setTimeout(stAutoSync, 1500); });
+  setInterval(() => { if(document.visibilityState === "visible") stAutoSync(); }, 10*60*1000);
+  document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") stAutoSync(); });
   document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") dSync(false); });
   paintG(); softRender();
 }
@@ -1497,6 +1649,7 @@ function resetAll(){
   if(keep && Object.keys(kept).length) put("settings", kept);
   if(!keep || !kept.gcalOn){ gUnwatchAll(); G.byWatch = {}; gRebuild(); if(G.mcp && !["unavailable","blocked","needs_add","needs_reauth"].includes(G.state)) G.state = "off"; }
   S.rzArm = false; S.rzText = ""; S.noteId = null; S.famWho = "all"; S.day = todayDate(); brandKey = null;
+  if(ST.cfg.after){ ST.cfg.after = 0; stSave(); }
   closeMenu(); go("home"); paintG(); toast("Planner reset. Everything is cleared.");
 }
 function openMenu(){ closeSheets(); S.menu = true; renderMenu(); document.getElementById("drawer").hidden = false; document.getElementById("scrim").hidden = false; const c = document.querySelector('#drawer [data-act="close"]'); if(c) c.focus(); }
@@ -1645,6 +1798,7 @@ function vDay(){
   const items = [
     ...timed.map(e => { const a = sameDay(e.start, d) ? e.start.getHours()*60 + e.start.getMinutes() : 0; const z = sameDay(e.end, d) ? e.end.getHours()*60 + e.end.getMinutes() : 1440; return {kind:"e", e, s:a, end:Math.max(a+15, z)}; }),
     ...blocks.map(b => ({kind:"b", b, s:b.s, end:b.s + b.dur})),
+    ...(((store.get("f" + mk(d.getFullYear(), d.getMonth())) || {}).log) || []).filter(f => f && f.date === key && f.at != null).map(f => ({kind:"a", f, s: f.at, end: f.at + Math.max(20, +f.el || +f.mins || 30)})),
   ].sort((x,y) => x.s - y.s || y.end - x.end);
   /* side-by-side columns for overlapping items */
   let cluster = [], cEnd = -1;
@@ -1654,6 +1808,8 @@ function vDay(){
   const pos = it => `top:calc(var(--hh) * ${((it.s - G0)/60).toFixed(4)});height:calc(var(--hh) * ${((it.end - it.s)/60).toFixed(4)});left:calc(${(100/it.ncol*it.col).toFixed(3)}% + 1px);width:calc(${(100/it.ncol).toFixed(3)}% - 3px)`;
   const tiHtml = it => {
     const short = (it.end - it.s) < 45;
+    if(it.kind==="a"){ const f = it.f, info = [f.dist ? f.dist + " mi" : "", f.mins ? f.mins + " min" : ""].filter(Boolean).join(" · ");
+      return `<a class="ti ta${short?" short":""}" href="https://www.strava.com/activities/${esc(f.strava || "")}" target="_blank" rel="noopener" style="${pos(it)}" title="Done: ${esc(f.notes || f.type)} · ${esc(info)}"><div class="tl"><i class="ck2" aria-hidden="true">✓</i><span>${esc(f.notes || f.type)}</span></div>${short ? "" : `<b>${esc(info)}</b>`}</a>`; }
     if(it.kind==="e"){ const e = it.e, inner = `<div class="tl"><span>${esc(e.title)}</span></div>${short?"":`<b>${fmtMin(it.s)}–${fmtMin(it.end)}</b>`}`;
       return e.link ? `<a class="ti te${short?" short":""}" href="${esc(e.link)}" target="_blank" rel="noopener" style="${pos(it)}${e.color?`;--ec:${e.color}`:""}" title="${esc(e.title)} · ${fmtMin(it.s)}–${fmtMin(it.end)}">${inner}</a>` : `<div class="ti te${short?" short":""}" style="${pos(it)}${e.color?`;--ec:${e.color}`:""}">${inner}</div>`; }
     const b = it.b, L = BT[b.t].l;
@@ -1777,11 +1933,11 @@ function vFitness(){
   const bars = weeks.map(w => { const d = parseYmd(w.key); return `<div class="bar"><b>${w.mins||""}</b><i style="height:${Math.round(w.mins/max*100)}%"></i><span>${MON3[d.getMonth()]} ${d.getDate()}</span></div>`; }).join("");
   const rows = log.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(e => {
     const d = e.date ? parseYmd(e.date) : null;
-    return `<tr><td class="mono">${d?`${DOW[dowIdx(d)]} ${MON3[d.getMonth()]} ${d.getDate()}`:"—"}</td><td><span class="stk" style="--c:var(--sec)">${esc(e.type||"Other")}</span></td><td class="mono">${e.mins?esc(e.mins)+" min":""}</td><td class="mono">${e.dist?esc(e.dist)+" mi":""}</td><td>${esc(e.notes||"")}</td><td class="x"><button class="xb" data-act="fitdel" data-i="${e.i}" aria-label="Delete workout">×</button></td></tr>`;
+    return `<tr><td class="mono">${d?`${DOW[dowIdx(d)]} ${MON3[d.getMonth()]} ${d.getDate()}`:"—"}</td><td><span class="stk" style="--c:var(--sec)">${esc(e.type||"Other")}</span></td><td class="mono">${e.mins?esc(e.mins)+" min":""}</td><td class="mono">${e.dist?esc(e.dist)+" mi":""}</td><td>${e.strava ? `<a class="stbadge" href="https://www.strava.com/activities/${esc(e.strava)}" target="_blank" rel="noopener" title="Open on Strava">Strava</a> ` : ""}${esc(e.notes||"")}</td><td class="x"><button class="xb" data-act="fitdel" data-i="${e.i}" aria-label="Delete workout">×</button></td></tr>`;
   }).join("");
   const h = Math.floor(mins/60), mm = Math.round(mins%60);
   return head(`Fitness · ${MONTHS[m]}`, `Log rides, runs, gym sessions and anything else that moves you`, monthChips()) +
-  `<div class="sec"><form class="fform" id="fitform" autocomplete="off">
+  `<div class="sec">${stPanel()}<form class="fform" id="fitform" autocomplete="off">
     <label><span>Date</span><input class="ln" type="date" id="fx-date" value="${ymd(S.day)}" min="${mk(y,m)}-01" max="${mk(y,m)}-${pad(dim(y,m))}"></label>
     <label><span>Type</span><select class="ln" id="fx-type">${FIT_TYPES.map(t=>`<option>${t}</option>`).join("")}</select></label>
     <label><span>Minutes</span><input class="ln" id="fx-min" inputmode="numeric" placeholder="45"></label>
@@ -1968,6 +2124,7 @@ drawerEl.addEventListener("input", e => {
   if(e.target.id==="rz-type"){ S.rzText = e.target.value; const g = document.getElementById("rz-go"); if(g) g.disabled = S.rzText.trim().toUpperCase()!=="RESET"; }
 });
 drawerEl.addEventListener("change", e => { if(e.target.id==="rz-keep") S.rzKeep = e.target.checked; });
+main.addEventListener("input", e => { if(e.target.id==="st-id"){ ST.cfg.clientId = e.target.value.trim(); stSave(); } else if(e.target.id==="st-secret"){ ST.cfg.clientSecret = e.target.value.trim(); stSave(); } });
 drawerEl.addEventListener("change", e => { if(e.target.id==="logo-file"){ handleLogo(e.target.files && e.target.files[0]); e.target.value = ""; } });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && (S.menu || S.sheet)) closeMenu(); });
 document.getElementById("qadd").addEventListener("submit", e => {
@@ -2218,6 +2375,10 @@ document.addEventListener("click", e => {
   else if(a==="stab"){ const nm = +b.dataset.m; S.day = new Date(y, nm, Math.min(d, dim(y,nm))); if(MONTH_AWARE.includes(S.view)) render(); else go("month"); }
   else if(a==="shift"){ shiftBy(+b.dataset.n); }
   else if(a==="menu"){ openMenu(); }
+  else if(a==="stconnect"){ stAuthorize(); }
+  else if(a==="stsync"){ stSync(false); }
+  else if(a==="stfull"){ stSync(true); }
+  else if(a==="stdisc"){ stDisconnect(); }
   else if(a==="pickcancel"){ S.pickBlock = null; render(); }
   else if(a==="blkdel"){ const rm = findBlock(S.blkEdit); if(rm){ removeBlock(rm, b.dataset.v); toast(b.dataset.v==="future" ? `${BT[rm.t].l} stops repeating from ${MON3[S.day.getMonth()]} ${S.day.getDate()}` : `Removed ${BT[rm.t].l}${rm.rec ? " for this day" : ""}`); } closeMenu(); render(); }
   else if(a==="bkscope"){ S.bkScope = b.dataset.v; document.querySelectorAll('#blk [data-act="bkscope"]').forEach(x => x.setAttribute("aria-pressed", String(x===b))); }

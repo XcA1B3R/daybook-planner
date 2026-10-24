@@ -10,3 +10,7 @@ The owner wants every release kept. For each new version:
 6. Commit and push to `main`. (Tag the release too if tag pushes are allowed; the `versions/` folder is the archive either way.)
 
 The planner is a single self-contained `index.html`. Saved entries live in the browser's localStorage under the key `daybook-v1`, which all versions share, so never rename that key without a migration.
+
+Testing: the page exposes a read-only `window.__daybook` hook (`blocksOn(date)`, `goDay(date)`) for automated browser tests. Keep it read-only.
+
+Privacy: Strava keys and tokens live in localStorage under `daybook-strava`, and the Google token under `daybook-gtoken`. Never write either into the repo.

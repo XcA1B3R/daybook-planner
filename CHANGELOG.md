@@ -2,6 +2,17 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v1.7 · 2026-10-24
+
+- **Strava sync** on the GitHub site. Set it up in the Strava panel at the top of the Fitness page.
+  - Create a free Strava API app and paste its Client ID and Secret. They're saved only in that browser, never in the repo.
+  - Connect Strava and approve read-only access.
+  - Activities from the start of the year import into the Fitness log: rides, runs, swims, walks, hikes, weight training and more, with time, miles and the activity name.
+  - New activities sync automatically when you open the planner, at most every 30 minutes. **Sync now** and **Re-check this year** are on the panel.
+  - Workouts never duplicate, and edits you make on Strava update the log.
+- Completed Strava workouts show on the Day grid as orange ✓ tiles at the time you did them, next to your planned blocks. Tap one to open it on Strava.
+- Imported entries in the Fitness log carry a Strava label that links to the activity.
+
 ## v1.6 · 2026-10-24
 
 - Blocks can repeat: every day, on weekdays, every week on the same day, or on days you pick. You can also set an end date.
