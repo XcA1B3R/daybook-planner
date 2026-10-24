@@ -14,3 +14,5 @@ The planner is a single self-contained `index.html`. Saved entries live in the b
 Testing: the page exposes a read-only `window.__daybook` hook (`blocksOn(date)`, `goDay(date)`) for automated browser tests. Keep it read-only.
 
 Privacy: Strava keys and tokens live in localStorage under `daybook-strava`, and the Google token under `daybook-gtoken`. Never write either into the repo.
+
+Beta: `beta/index.html` is the v3.0 test build (Firebase sign-in with Google plus a TOTP authenticator code, Firestore sync). It uses its own storage keys (`daybook-v3-cache`, `daybook-v3-strava`, `daybook-v3-gtoken`) and only reads `daybook-v1`/`daybook-strava` for a one-time import, so the main version is never affected. Don't promote it to the root until the owner approves; then archive it as `versions/v3.0/` like any release.

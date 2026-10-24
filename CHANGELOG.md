@@ -2,6 +2,14 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v3.0 beta · testing at /beta/ (not yet the main version)
+
+- Sign in with Google, then a 6-digit code from an authenticator app such as Google Authenticator. The first sign-in walks you through adding Daybook to the app with a QR code or setup key.
+- Your entries, settings, logo, Google Calendar sign-in ID and Strava connection are stored in your own Firebase account, so they follow you to every device you sign in on.
+- On first sign-in, the beta copies the entries saved on that device by the main version. It only reads them and never changes or deletes them. **Customize › Account** can copy them again from any device.
+- The beta keeps its own copy of your data on each device, separate from the main version, so the two never interfere.
+- **Sign out of this device** clears the beta's local copy. Your account data stays safe in Firebase.
+
 ## v2.0 · 2026-10-24
 
 - The Fitness page now opens with a dashboard:
