@@ -2,6 +2,16 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v1.4 · 2026-10-24
+
+- The Day schedule is now a time grid. Each block is drawn at its actual start and end times, with a red line marking the current time.
+- New activity blocks: Work, Gym, Swim, Sauna, Walk and Ride.
+  - Drag one onto the schedule, or tap one and then tap a time.
+  - Drag a block to move it, and drag its top or bottom edge to change the start or end time. Everything snaps to 15 minutes.
+  - Tap a block to change the activity, start, length or note, copy it to tomorrow, or remove it.
+- Google Calendar events show in the same grid, side by side with your blocks when they overlap.
+- Blocks also appear on the Week and Family pages and in the Home "Up next" card.
+
 ## v1.3 · 2026-10-23
 
 - Weeks now start on Sunday on every page: year, month, week, family, habit tracker and the workout charts.
