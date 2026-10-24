@@ -21,6 +21,10 @@ Open the live site (GitHub Pages) on your phone, tablet or computer:
 
 To install it on Android, open the site in Chrome, tap the ⋮ menu, then **Add to Home screen**.
 
+### Versions
+
+Every release is kept. Open an older one from **https://xca1b3r.github.io/daybook-planner/versions/**. See `CHANGELOG.md` for what changed in each.
+
 ### Running outside Claude
 
 This version is the same planner published in Claude. Outside Claude:
@@ -35,4 +39,6 @@ A standalone Google sign-in for Calendar and syncing is planned as the next step
 | File | What it is |
 |---|---|
 | `index.html` | The whole planner: layout, styles and code in one file |
+| `versions/` | A frozen copy of every released version |
+| `CHANGELOG.md` | What changed in each version |
 | `.nojekyll` | Tells GitHub Pages to serve the files as they are |

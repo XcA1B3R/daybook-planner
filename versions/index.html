@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Daybook Versions</title>
+<style>
+:root{--bg:#D9E1D6;--paper:#FCFCF8;--ink:#2B302C;--muted:#6B746D;--line:#D3DACF;--accent:#4E7A57}
+@media (prefers-color-scheme: dark){:root{--bg:#0E1216;--paper:#191E24;--ink:#E5E7EA;--muted:#98A1AB;--line:#2B323A;--accent:#E8B86C;color-scheme:dark}}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:32px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px))}
+h1{font:400 34px Georgia,serif;margin:0 0 6px}
+p{color:var(--muted);margin:0 0 22px}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+li a{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 16px;background:var(--paper);border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none}
+li a:hover{border-color:var(--accent)}
+li b{font-size:17px}
+li span{color:var(--muted);font-size:13px}
+.cur{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+</style>
+</head>
+<body>
+<main>
+<h1>Daybook versions</h1>
+<p>Every released version stays here. All versions share the entries saved on this device.</p>
+<ul>
+  <li><a class="cur" href="../"><b>Latest</b><span>Always the newest version</span></a></li>
+  <li><a href="v1.0/"><b>v1.0</b><span>Oct 23, 2026 · first GitHub release</span></a></li>
+</ul>
+</main>
+</body>
+</html>
