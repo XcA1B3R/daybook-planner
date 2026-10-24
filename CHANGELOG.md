@@ -2,6 +2,14 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v1.5 · 2026-10-24
+
+- Google Calendar now works on the GitHub site, not just inside Claude. The planner signs in to Google directly, and only reads your calendar.
+  - One-time setup: create a free Google sign-in ID (OAuth client ID) and paste it into Customize › Google Calendar. Step-by-step instructions are built in.
+  - Events refresh every 5 minutes while the planner is open, and when you come back to it.
+  - Google sign-ins last an hour. After that, the planner keeps showing your last-known calendar and offers an **Update calendar** button.
+- Inside Claude, Google Calendar still connects through Claude, as before.
+
 ## v1.4 · 2026-10-24
 
 - The Day schedule is now a time grid. Each block is drawn at its actual start and end times, with a red line marking the current time.

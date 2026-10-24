@@ -111,6 +111,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 .logoprev img,.logoprev svg{width:56px;height:56px;object-fit:contain;display:block}
 label.btn{display:inline-block;cursor:pointer}
 .hint.err{color:var(--bad)}
+.gsetup{display:flex;flex-direction:column;gap:6px;margin:6px 0 4px}
+.gsetup details{font-size:13.5px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--paper)}
+.gsetup summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.steps{margin:8px 0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.steps a{color:var(--accent)}
+.steps code{font:500 12.5px var(--mono);background:var(--rule);padding:1px 5px;border-radius:4px;word-break:break-all}
 .rz{border:1.5px solid var(--bad);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;background:color-mix(in srgb, var(--bad) 7%, var(--paper))}
 .rz p{margin:0;font-size:14px}
 .rz label.row{font-size:14px;align-items:flex-start}
@@ -951,6 +957,7 @@ function gHandle(wkey){
 }
 function gUnwatchAll(){ Object.values(G.watches).forEach(u => { try { u(); } catch(e) {} }); G.watches = {}; }
 function gSync(){
+  if(G.mode === "direct"){ if(gOn() && G.state === "ok") dSyncSoon(); return; }
   if(!G.mcp || !gOn() || !G.args || ["needs_add","needs_reauth","approval","blocked","unavailable"].includes(G.state)) return;
   const want = new Set();
   gNeededMonths().forEach(mkey => gTargets().forEach(cal => want.add(mkey + "|" + cal)));
@@ -978,6 +985,7 @@ function gErr(e, wkey){
   paintG(); softRender();
 }
 async function gConnect(){
+  if(G.mode === "direct") return dConnect();
   if(!G.mcp){ G.state = "unavailable"; paintG(); return; }
   G.state = "loading"; G.msg = ""; paintG();
   try {
@@ -993,16 +1001,128 @@ async function gConnect(){
   paintG(); render();
 }
 function gDisconnect(){
+  if(G.mode === "direct") dRevoke();
   const doc = clone(get("settings")); doc.gcalOn = false; put("settings", doc);
   gUnwatchAll(); G.byWatch = {}; gRebuild(); G.state = "off"; G.msg = ""; paintG(); render();
 }
 async function gRefresh(){
+  if(G.mode === "direct") return dRefresh();
   if(!G.mcp) return;
   G.msg = ""; if(G.state==="error") G.state = "loading"; paintG();
   try { await G.mcp.invalidate(GC); } catch(e) { gUnwatchAll(); }
   try { const r = await G.mcp.callTool(GC, "list_calendars", {}, {cache:false}); G.cals = parseCals(r.payload); } catch(e) {}
   if(!Object.keys(G.watches).length) gSync();
 }
+/* ---------- Google Calendar, direct (when the planner runs outside Claude) ---------- */
+const GSCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+const TOKKEY = "daybook-gtoken", GCACHE = "daybook-gcal-cache";
+G.dLast = {}; G.tc = null; G.tok = null;
+const tokValid = () => G.tok && G.tok.exp > Date.now() + 30000;
+function saveTok(){ try { G.tok ? localStorage.setItem(TOKKEY, JSON.stringify(G.tok)) : localStorage.removeItem(TOKKEY); } catch(e) {} }
+function loadTok(){ try { const t = JSON.parse(localStorage.getItem(TOKKEY) || "null"); if(t && t.access_token) G.tok = t; } catch(e) {} }
+function saveGCache(){
+  try {
+    const out = {}; Object.entries(G.byWatch).forEach(([k, list]) => out[k] = (list||[]).map(e => ({...e, start: e.start.toISOString(), end: e.end.toISOString()})));
+    localStorage.setItem(GCACHE, JSON.stringify({ updated: G.updated, cals: G.cals, byWatch: out }));
+  } catch(e) {}
+}
+function loadGCache(){
+  try {
+    const c = JSON.parse(localStorage.getItem(GCACHE) || "null"); if(!c) return;
+    G.updated = c.updated || 0; G.cals = c.cals || [];
+    Object.entries(c.byWatch || {}).forEach(([k, list]) => G.byWatch[k] = list.map(e => ({...e, start: new Date(e.start), end: new Date(e.end)})));
+    gRebuild();
+  } catch(e) {}
+}
+function loadGIS(){
+  return new Promise((res, rej) => {
+    if(window.google && google.accounts && google.accounts.oauth2) return res();
+    const sc = document.createElement("script"); sc.src = "https://accounts.google.com/gsi/client"; sc.async = true;
+    sc.onload = () => res(); sc.onerror = () => rej(new Error("gis")); document.head.appendChild(sc);
+  });
+}
+async function dAuth(consent){
+  const cid = (get("settings").gClientId || "").trim();
+  if(!cid){ G.state = "setup"; paintG(); openMenu(); return; }
+  try { await loadGIS(); } catch(e){ G.state = "error"; G.msg = "Couldn't reach Google sign-in. Check your internet connection and try again."; paintG(); softRender(); return; }
+  if(!G.tc || G.tcId !== cid){
+    G.tcId = cid;
+    G.tc = google.accounts.oauth2.initTokenClient({ client_id: cid, scope: GSCOPE,
+      callback: async resp => {
+        if(resp.error){ G.state = gOn() ? "needs_tap" : "off"; G.msg = resp.error==="access_denied" ? "Google sign-in was cancelled. Tap to try again." : `Google sign-in didn't finish (${resp.error}).`; paintG(); softRender(); return; }
+        G.tok = { access_token: resp.access_token, exp: Date.now() + (Number(resp.expires_in) || 3600) * 1000 }; saveTok();
+        if(!gOn()){ const doc = clone(get("settings")); doc.gcalOn = true; put("settings", doc); toast("Google Calendar connected"); }
+        G.state = "ok"; G.msg = ""; G.dLast = {};
+        await dCalendars(); dSync(true);
+      },
+      error_callback: err => { G.state = gOn() ? "needs_tap" : "off"; G.msg = err && err.type==="popup_closed" ? "The Google sign-in window closed before finishing. Tap to try again." : "Google sign-in was blocked. Allow pop-ups for this site, then tap to try again."; paintG(); softRender(); }
+    });
+  }
+  G.tc.requestAccessToken({ prompt: consent ? "consent" : "" });
+}
+async function dFetch(path, params){
+  const u = new URL("https://www.googleapis.com/calendar/v3/" + path);
+  Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
+  let r;
+  try { r = await fetch(u.toString(), { headers: { Authorization: "Bearer " + G.tok.access_token } }); }
+  catch(e){ throw { code: "offline" }; }
+  if(r.status === 401){ G.tok = null; saveTok(); throw { code: "expired" }; }
+  if(!r.ok){ let m = ""; try { m = (await r.json()).error.message; } catch(e) {} throw { code: "http", status: r.status, message: m }; }
+  return r.json();
+}
+function dErr(e){
+  if(e.code === "expired"){ G.state = "needs_tap"; G.msg = ""; }
+  else if(e.code === "offline"){ G.msg = "You're offline. Showing your calendar as of " + (G.updated ? fmtTime(new Date(G.updated)) : "the last update") + "."; G.state = "needs_tap"; }
+  else if(e.status === 403){ G.state = "error"; G.msg = "Google refused the request" + (e.message ? ": " + e.message : ".") + " Check that the Google Calendar API is turned on in your Google Cloud project."; }
+  else { G.state = "error"; G.msg = "Google Calendar couldn't load events" + (e.message ? ": " + e.message : "."); }
+  paintG(); softRender();
+}
+async function dCalendars(){
+  if(!tokValid()) return;
+  try { const j = await dFetch("users/me/calendarList", { minAccessRole: "reader", maxResults: "250" }); const cals = parseCals(j); if(cals.length) G.cals = cals; }
+  catch(e){ dErr(e); }
+}
+let dTimer = null, dBusy = false;
+function dSyncSoon(){ clearTimeout(dTimer); dTimer = setTimeout(() => dSync(false), 250); }
+async function dSync(force){
+  if(dBusy || !gOn()) return;
+  if(!tokValid()){ if(G.state === "ok"){ G.state = "needs_tap"; paintG(); softRender(); } return; }
+  dBusy = true;
+  try {
+    const hid = gHidden(), cals = (G.cals.length ? G.cals.filter(c => !hid.has(c.id)) : [{ id: "primary" }]).slice(0, 12);
+    const months = [...gNeededMonths()], fresh = 5*60*1000;
+    let changed = false;
+    for(const mkey of months) for(const c of cals){
+      const key = mkey + "|" + c.id;
+      if(!force && G.dLast[key] && Date.now() - G.dLast[key] < fresh) continue;
+      const w = gWindow(mkey);
+      const j = await dFetch(`calendars/${encodeURIComponent(c.id)}/events`, { timeMin: w.from.toISOString(), timeMax: w.to.toISOString(), singleEvents: "true", orderBy: "startTime", maxResults: "2500", timeZone: TZ });
+      G.byWatch[key] = parseEvents(j, { id: c.id, color: c.color }) || [];
+      G.dLast[key] = Date.now(); changed = true;
+    }
+    Object.keys(G.byWatch).forEach(k => { const [mk0, cid] = k.split("|"); if(!months.includes(mk0) || (cid && hid.has(cid))) delete G.byWatch[k]; });
+    if(changed){ G.updated = Date.now(); G.state = "ok"; G.msg = ""; gRebuild(); saveGCache(); paintG(); softRender(); }
+  } catch(e){ dErr(e); }
+  finally { dBusy = false; }
+}
+function dConnect(){ dAuth(!gOn()); }
+function dRefresh(){ if(tokValid()){ G.dLast = {}; dCalendars().then(() => dSync(true)); } else dAuth(false); }
+function dRevoke(){
+  try { if(G.tok && window.google && google.accounts && google.accounts.oauth2) google.accounts.oauth2.revoke(G.tok.access_token, () => {}); } catch(e) {}
+  G.tok = null; saveTok(); G.dLast = {}; G.cals = []; G.updated = 0; try { localStorage.removeItem(GCACHE); } catch(e) {}
+}
+function startDirect(){
+  G.mode = "direct"; loadTok(); loadGCache();
+  const cid = (get("settings").gClientId || "").trim();
+  if(!cid) G.state = "setup";
+  else if(!gOn()) G.state = "off";
+  else if(tokValid()){ G.state = "ok"; dCalendars().then(() => dSync(true)); }
+  else G.state = "needs_tap";
+  setInterval(() => { if(document.visibilityState === "visible") dSync(false); }, 5*60*1000);
+  document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") dSync(false); });
+  paintG(); softRender();
+}
+
 function gStatusText(){
   switch(G.state){
     case "ok": return { t: G.updated ? `Calendar updated ${fmtTime(new Date(G.updated))}` : "Calendar synced", cls:"ok" };
@@ -1011,6 +1131,7 @@ function gStatusText(){
     case "needs_reauth": return { t: "Calendar needs sign-in", cls:"warn" };
     case "approval": return { t: "Calendar needs your OK", cls:"warn" };
     case "error": return { t: "Calendar problem", cls:"warn" };
+    case "needs_tap": return { t: G.updated ? `Calendar from ${fmtTime(new Date(G.updated))}` : "Calendar needs sign-in", cls:"warn" };
     default: return null;
   }
 }
@@ -1021,6 +1142,8 @@ function gHelp(){
     case "approval": return "The planner needs your OK to read Google Calendar. Tap Allow and confirm when Claude asks.";
     case "blocked": return "Your organization doesn't allow Google Calendar here.";
     case "unavailable": return "Open the planner in the Claude app or on claude.ai while signed in to use Google Calendar.";
+    case "setup": return "Add your Google sign-in ID in Customize › Google Calendar to connect your calendar.";
+    case "needs_tap": return G.msg || (G.updated ? `Showing your calendar as of ${fmtTime(new Date(G.updated))}. Tap Update to sign in to Google again and get the latest.` : "Tap Sign in with Google to load your calendar.");
     case "error": return G.msg;
     case "loading": case "checking": return "Loading your events…";
     case "ok": return `Showing ${G.cals.length ? G.cals.filter(c=>!gHidden().has(c.id)).length + " calendar" + (G.cals.filter(c=>!gHidden().has(c.id)).length===1?"":"s") : "your calendar"}. Updates every few minutes while the planner is open.`;
@@ -1030,6 +1153,12 @@ function gHelp(){
 function gButtons(){
   const st = G.state;
   if(st==="unavailable" || st==="blocked") return "";
+  if(G.mode === "direct"){
+    if(st==="setup") return `<button class="btn" data-act="menu">Set up Google sign-in</button>`;
+    if(!gOn() || st==="off") return `<button class="btn" data-act="gconnect">Sign in with Google</button>`;
+    if(st==="needs_tap") return `<button class="btn" data-act="gconnect">${G.updated ? "Update calendar" : "Sign in with Google"}</button>`;
+    if(st==="error") return `<button class="btn ghost" data-act="grefresh">Try again</button>`;
+  }
   if(!gOn() || st==="needs_add" || st==="off") return `<button class="btn" data-act="gconnect">Connect Google Calendar</button>`;
   if(st==="approval") return `<button class="btn" data-act="gconnect">Allow Google Calendar</button>`;
   return `<button class="btn ghost" data-act="grefresh">Refresh</button>`;
@@ -1302,7 +1431,20 @@ function renderMenu(){
   document.getElementById("drawer").innerHTML = `
     <header><h2>Customize</h2><button class="iconb" data-act="close" aria-label="Close">×</button></header>
     <div><p class="lbl">Google Calendar</p>
-      <p class="hint" style="margin:0 0 4px;font-size:13.5px;color:var(--ink)">${esc(gOn() ? gHelp() : (G.state==="unavailable"||G.state==="blocked") ? gHelp() : "Sign in with Google to see your calendar events on your day, week, month and Home pages.")}</p>
+      <p class="hint" style="margin:0 0 4px;font-size:13.5px;color:var(--ink)">${esc(gOn() ? gHelp() : (G.state==="unavailable"||G.state==="blocked"||G.state==="setup") ? gHelp() : "Sign in with Google to see your calendar events on your day, week, month and Home pages.")}</p>
+      ${G.mode === "direct" ? `<div class="gsetup">
+        <label class="cap" for="${fid("settings","gClientId")}">Google sign-in ID (OAuth client ID)</label>
+        ${I("settings","gClientId",{ph:"1234567890-abc123.apps.googleusercontent.com",label:"Google OAuth client ID"})}
+        <details${(get("settings").gClientId||"").trim() ? "" : " open"}><summary>How to get one (about 10 minutes, free)</summary>
+          <ol class="steps">
+            <li>Go to <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a> and create a project, for example "Daybook".</li>
+            <li>Open <a href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com" target="_blank" rel="noopener">Google Calendar API</a> and click <b>Enable</b>.</li>
+            <li>Open <a href="https://console.cloud.google.com/auth/overview" target="_blank" rel="noopener">Google Auth Platform</a> and click <b>Get started</b>. Give the app a name, choose <b>External</b>, and add your Gmail address as a <b>test user</b> under Audience.</li>
+            <li>Under <b>Clients</b>, click <b>Create client</b>, choose <b>Web application</b>, and under <b>Authorized JavaScript origins</b> add <code class="copyme">${esc(location.origin && location.origin !== "null" ? location.origin : "https://xca1b3r.github.io")}</code></li>
+            <li>Copy the <b>Client ID</b> into the box above, then tap <b>Sign in with Google</b>.</li>
+          </ol>
+          <p class="hint">Google will warn that the app isn't verified. That's expected for your own app. Choose Continue.</p>
+        </details></div>` : ""}
       ${gOn() && G.cals.length ? `<div>${G.cals.map(c => `<label class="calrow"${c.color?` style="--ec:${c.color}"`:""}><i></i><span>${esc(c.name)}</span><input type="checkbox" class="ck" data-act="gcaltog" data-id="${esc(c.id)}"${gHidden().has(c.id)?"":" checked"} aria-label="Show ${esc(c.name)}"></label>`).join("")}</div>` : ""}
       <div class="gbtns">${gButtons()}${gOn() ? `<button class="btn ghost" data-act="gdisc">Disconnect</button>` : ""}</div></div>
     <div><p class="lbl">Appearance</p><div class="seg" role="group" aria-label="Appearance">${MODES.map(([id,l]) => `<button data-act="mode" data-t="${id}" aria-pressed="${p.mode===id}">${l}</button>`).join("")}</div>
@@ -1757,7 +1899,7 @@ function render(){
   const prim = ["home","day","week","month"];
   document.querySelectorAll("#bnav [data-go]").forEach(b => { if(b.dataset.go===S.view) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
   const bm = document.getElementById("bn-more"); if(prim.includes(S.view)) bm.removeAttribute("aria-current"); else bm.setAttribute("aria-current","page");
-  if(G.mcp && gOn() && G.state==="off") gStart(); else gSync();
+  if(G.mode !== "direct" && G.mcp && gOn() && G.state==="off") gStart(); else gSync();
 }
 function go(view){ if(S.menu || S.sheet) closeMenu(); if(view!=="day") S.pickBlock = null; S.view = view; S.delArm = null; try { history.replaceState(null,"","#"+view); } catch(e) {} render(); window.scrollTo({top:0}); }
 const editing = () => { const a = document.activeElement; return !!(a && a.dataset && a.dataset.k && main.contains(a)); };
@@ -1772,6 +1914,7 @@ function onField(e){
   if(el.type==="checkbox"){ const row = el.closest(".row"); if(row && /\.done$/.test(el.dataset.p)) row.classList.toggle("done", el.checked); }
   if(S.view==="budget") paintBudget();
   if(S.view==="goals" && el.dataset.k[0]==="h") paintHabits();
+  if(el.dataset.k==="settings" && el.dataset.p==="gClientId" && G.mode==="direct"){ G.tc = null; const has = el.value.trim(); if(!has){ G.state = "setup"; } else if(G.state==="setup"){ G.state = gOn() ? "needs_tap" : "off"; } paintG(); const gb = document.querySelector("#drawer .gbtns"); if(gb) gb.innerHTML = gButtons() + (gOn() ? `<button class="btn ghost" data-act="gdisc">Disconnect</button>` : ""); }
   if(el.dataset.k==="settings" && el.dataset.p==="title"){ const t = document.getElementById("covtitle"); if(t) t.textContent = el.value.trim() || "My Planner"; applyBrand(); }
   if(el.dataset.k[0]==="n" && el.dataset.p==="title"){ const li = document.getElementById("nl-"+el.dataset.k); if(li) li.textContent = el.value || "Untitled"; }
 }
@@ -2054,7 +2197,7 @@ setStatus("Saved on this device");
 /* ---------- Google Calendar start-up ---------- */
 (async () => {
   try {
-    if(!window.claude || !window.claude.use){ G.state = "unavailable"; paintG(); softRender(); return; }
+    if(!window.claude || !window.claude.use){ startDirect(); return; }
     const mcp = await window.claude.use("mcp");
     if(!mcp){ G.state = "unavailable"; paintG(); softRender(); return; }
     G.mcp = mcp; await gStart();

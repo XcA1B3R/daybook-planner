@@ -30,9 +30,7 @@ Every release is kept. Open an older one from **https://xca1b3r.github.io/dayboo
 This version is the same planner published in Claude. Outside Claude:
 
 - Entries save in that browser on that device only, and don't sync between devices.
-- Google Calendar shows a message instead of your events, because the current connection goes through Claude.
-
-A standalone Google sign-in for Calendar and syncing is planned as the next step.
+- Google Calendar connects with its own Google sign-in. Set it up once under Customize › Google Calendar.
 
 ## Files
 
