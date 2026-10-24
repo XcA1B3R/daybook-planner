@@ -111,6 +111,39 @@ button{font:inherit;color:inherit;cursor:pointer}
 .logoprev img,.logoprev svg{width:56px;height:56px;object-fit:contain;display:block}
 label.btn{display:inline-block;cursor:pointer}
 .hint.err{color:var(--bad)}
+.fdash{display:flex;flex-direction:column;gap:16px}
+.fhero{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.hcard{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.hcard .hv{font:400 32px/1.1 var(--serif);margin-top:2px}
+.hcard .hs{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dl{font-size:12.5px;font-weight:600;color:var(--muted);margin-top:4px}
+.dl.up{color:var(--good)} .dl.down{color:var(--bad)}
+.ringcard{flex-direction:row;align-items:center;gap:14px}
+.ringcard .ring{width:96px;height:96px}
+.goalin{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--muted);margin:2px 0}
+.goalin input{width:64px;font:500 16px var(--mono);padding:4px 2px}
+.fcharts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.fdash .dc{grid-column:auto}
+.fdash .dch{flex-wrap:wrap;row-gap:6px}
+svg.ch .goal{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:5 5}
+svg.ch .goallab{fill:var(--muted);font:600 11px var(--mono)}
+svg.ch .ln.prev{stroke:var(--muted);stroke-dasharray:6 5;stroke-width:2}
+svg.ch .endlab{fill:var(--ink);font:600 12px var(--mono)}
+svg.ch .endlab.prev{fill:var(--muted)}
+.legend i.prevk{background:none;border-top:2px dashed var(--muted);height:0;border-radius:0;align-self:center}
+.chscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+svg.hmap{display:block;width:auto;max-width:none;height:auto}
+.hm.l0{fill:var(--rule)} .hm.lf{fill:var(--rule);opacity:.4}
+.hm.l1{fill:color-mix(in srgb, var(--accent) 30%, var(--paper))}
+.hm.l2{fill:color-mix(in srgb, var(--accent) 55%, var(--paper))}
+.hm.l3{fill:color-mix(in srgb, var(--accent) 78%, var(--paper))}
+.hm.l4{fill:var(--accent)}
+.hm.today{stroke:var(--ink);stroke-width:1.5}
+.hml{align-items:center;gap:4px}
+.hml i.hm{width:11px;height:11px;border-radius:2.5px;display:inline-block}
+.hml i.hm.l0{background:var(--rule)} .hml i.hm.l1{background:color-mix(in srgb, var(--accent) 30%, var(--paper))} .hml i.hm.l2{background:color-mix(in srgb, var(--accent) 55%, var(--paper))} .hml i.hm.l3{background:color-mix(in srgb, var(--accent) 78%, var(--paper))} .hml i.hm.l4{background:var(--accent)}
+@media (max-width:1180px){ .fhero{grid-template-columns:repeat(2,minmax(0,1fr))} .fcharts{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:520px){ .fhero{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px} .hcard{padding:12px} .hcard .hv{font-size:24px} .ringcard{flex-direction:column;align-items:flex-start;gap:8px} .ringcard .ring{width:72px;height:72px} .goalin input{width:52px} }
 .ysum{display:flex;flex-direction:column;gap:14px}
 .ytot{grid-template-columns:repeat(auto-fit,minmax(96px,1fr))}
 .ytot .v{font-size:22px;white-space:nowrap}
@@ -1456,7 +1489,7 @@ function vCover(){
 }
 
 /* ---------- charts ---------- */
-const niceMax = v => { if(v<=0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), f = v/p; return (f<=1?1:f<=2?2:f<=5?5:10)*p; };
+const niceMax = v => { if(v<=0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), f = v/p; return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=3?3:f<=4?4:f<=5?5:f<=6?6:f<=8?8:10)*p; };
 const shortMoney = n => Math.abs(n)>=1000 ? "$"+(n/1000).toFixed(n>=10000?0:1)+"k" : "$"+Math.round(n);
 function ring(pct, big, small){
   const r = 48, c = 2*Math.PI*r, off = c*(1-Math.max(0,Math.min(1,pct)));
@@ -1983,6 +2016,110 @@ function fitYear(y){
   });
   return { types, tot, days: days.size };
 }
+/* ---------- fitness dashboard (top of the Fitness page) ---------- */
+function fitDaily(years){
+  const by = new Map();
+  [...new Set(years)].forEach(y => { for(let m = 0; m < 12; m++) ((store.get("f" + mk(y, m)) || {}).log || []).forEach(e => {
+    if(!e || !e.date) return; const o = by.get(e.date) || { n:0, mins:0, mi:0 }; o.n++; o.mins += num(e.mins); o.mi += num(e.dist); by.set(e.date, o); }); });
+  return by;
+}
+function sumRange(by, from, to){ const o = { n:0, mins:0, mi:0, days:0 }; for(let d = new Date(from); d <= to; d = addDays(d, 1)){ const v = by.get(ymd(d)); if(v){ o.n += v.n; o.mins += v.mins; o.mi += v.mi; o.days++; } } return o; }
+function deltaTxt(cur, prev, unit, fmt){
+  if(!prev && !cur) return `<span class="dl">No workouts either week</span>`;
+  if(!prev) return `<span class="dl up">▲ new this week</span>`;
+  const d = cur - prev, pct = Math.round(d / prev * 100);
+  if(Math.abs(d) < 1e-9) return `<span class="dl">Same as last week</span>`;
+  return `<span class="dl ${d > 0 ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${fmt(Math.abs(d))}${unit} (${pct > 0 ? "+" : ""}${pct}%) vs last week</span>`;
+}
+function weeklyChart(by, goalH){
+  const td = todayDate(), ws0 = weekStart(td), N = 12, weeks = [];
+  for(let i = N - 1; i >= 0; i--){ const a = addDays(ws0, -7*i), z = addDays(a, 6); const r = sumRange(by, a, z < td ? z : td); weeks.push({ a, h: r.mins / 60, n: r.n, mi: r.mi }); }
+  const sm = window.innerWidth < 560, W = sm ? 360 : 600, H = sm ? 200 : 220, L = sm ? 30 : 40, R = goalH ? (sm ? 40 : 54) : 10, T = 24, B = 28, iw = W - L - R, ih = H - T - B;
+  const mx = niceMax(Math.max(goalH || 0, ...weeks.map(w => w.h), 1)), slot = iw / N, bw = Math.min(30, slot * .62), Yp = v => T + ih - v / mx * ih;
+  let g = "";
+  [0, .5, 1].forEach(t => { const y = T + ih - t*ih; g += `<line class="${t ? "grid" : "base"}" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text class="ax" x="${L-8}" y="${y+4}" text-anchor="end">${fmtNum(mx*t, mx*t % 1 ? 1 : 0)}h</text>`; });
+  weeks.forEach((w, i) => {
+    const x = L + i*slot + (slot - bw)/2, h = w.h / mx * ih, cur = i === N - 1;
+    g += `<path class="bar${cur ? " cur" : ""}" d="${roundTop(x, T + ih - h, bw, h, 4)}"/>`;
+    if((sm ? i % 4 === 3 : i % 3 === 2) && !cur || cur) g += `<text class="ax" x="${x + bw/2}" y="${H-8}" text-anchor="middle">${cur ? "This wk" : MON3[w.a.getMonth()] + " " + w.a.getDate()}</text>`;
+    if(cur && w.h > 0) g += `<text class="lab" x="${x + bw/2}" y="${T + ih - h - 7}" text-anchor="middle">${fmtHrs(w.h*60)}</text>`;
+    g += `<rect class="hit" x="${L + i*slot}" y="${T}" width="${slot}" height="${ih + B}" data-tip="Week of ${MON3[w.a.getMonth()]} ${w.a.getDate()}: ${fmtHrs(w.h*60)} · ${w.n} workout${w.n===1?"":"s"}${w.mi ? " · " + fmtNum(w.mi,1) + " mi" : ""}"/>`;
+  });
+  if(goalH){ const y = Yp(goalH); g += `<line class="goal" x1="${L}" x2="${W-R+4}" y1="${y}" y2="${y}"/><text class="goallab" x="${W-R+7}" y="${y-3}">Goal</text><text class="goallab" x="${W-R+7}" y="${y+10}">${fmtNum(goalH, goalH % 1 ? 1 : 0)}h</text>`; }
+  const avg = weeks.slice(0, -1).reduce((a, w) => a + w.h, 0) / (N - 1);
+  return { svg: `<svg class="ch" viewBox="0 0 ${W} ${H}" role="img" aria-label="Workout hours per week, last 12 weeks">${g}</svg>`, avg, hit: weeks.slice(0, -1).filter(w => goalH && w.h >= goalH).length };
+}
+function cumulativeChart(y, byThis, byPrev){
+  const sm = window.innerWidth < 560, W = sm ? 360 : 600, H = sm ? 210 : 230, L = sm ? 42 : 52, R = sm ? 44 : 60, T = 18, B = 26, iw = W - L - R, ih = H - T - B;
+  const td = todayDate(), isCur = td.getFullYear() === y, lastDay = isCur ? dayOfYear(td) : yearLen(y);
+  const series = (by, yy, upto) => { const out = []; let c = 0; for(let i = 1; i <= upto; i++){ const v = by.get(ymd(addDays(new Date(yy, 0, 1), i - 1))); if(v) c += v.mi; if(i % 7 === 0 || i === upto) out.push([i, c]); } return out; };
+  const a = series(byThis, y, lastDay), b = series(byPrev, y - 1, yearLen(y - 1));
+  const hasPrev = b.length && b[b.length - 1][1] > 0;
+  const mx = niceMax(Math.max(1, a.length ? a[a.length-1][1] : 0, hasPrev ? b[b.length-1][1] : 0)), X = i => L + (i - 1) / 365 * iw, Yp = v => T + ih - v / mx * ih;
+  let g = "";
+  [0, .5, 1].forEach(t => { const yy = T + ih - t*ih; g += `<line class="${t ? "grid" : "base"}" x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}"/><text class="ax" x="${L-8}" y="${yy+4}" text-anchor="end">${fmtNum(mx*t)}</text>`; });
+  MON3.forEach((mn, i) => { const xi = X(dayOfYear(new Date(y, i, 1))); if(i % 2 === 0) g += `<text class="ax" x="${xi}" y="${H-8}" text-anchor="start">${mn}</text>`; });
+  const path = pts => "M" + pts.map(([i, v]) => `${X(i).toFixed(1)},${Yp(v).toFixed(1)}`).join("L");
+  if(hasPrev){ g += `<path class="ln prev" d="${path(b)}"/>`; const e = b[b.length-1]; g += `<text class="endlab prev" x="${X(e[0]) + 6}" y="${Yp(e[1]) + 4}">${y-1}</text>`; }
+  if(a.length){
+    g += `<path class="area" d="${path(a)}L${X(a[a.length-1][0]).toFixed(1)},${T+ih}L${X(1)},${T+ih}Z"/><path class="ln" d="${path(a)}"/>`;
+    const e = a[a.length-1]; g += `<circle class="pt" cx="${X(e[0])}" cy="${Yp(e[1])}" r="5"/><text class="endlab" x="${X(e[0]) + 8}" y="${Yp(e[1]) + 4}">${y}</text>`;
+  }
+  const sameDayPrev = hasPrev ? (b.find(p => p[0] >= lastDay) || b[b.length-1])[1] : 0;
+  for(let k = 0; k < a.length; k++){ const [i, v] = a[k]; const pv = hasPrev ? (b.find(p => p[0] >= i) || b[b.length-1])[1] : null; const dd = addDays(new Date(y, 0, 1), i - 1);
+    g += `<rect class="hit" x="${X(i) - iw/104}" y="${T}" width="${iw/52}" height="${ih}" data-tip="${MON3[dd.getMonth()]} ${dd.getDate()}: ${fmtNum(v,1)} mi in ${y}${pv != null ? ` · ${fmtNum(pv,1)} mi in ${y-1}` : ""}"/>`; }
+  return { svg: `<svg class="ch" viewBox="0 0 ${W} ${H}" role="img" aria-label="Cumulative miles in ${y}${hasPrev ? " compared with " + (y-1) : ""}">${g}</svg>`, total: a.length ? a[a.length-1][1] : 0, prevSame: sameDayPrev, hasPrev };
+}
+function heatmap(y, by){
+  const start = weekStart(new Date(y, 0, 1)), end = new Date(y, 11, 31), cols = Math.ceil((end - start) / 864e5 / 7 + 0.01), cs = 11, gap = 3, L = 26, T = 18;
+  const W = L + cols * (cs + gap), H = T + 7 * (cs + gap), td = todayDate();
+  const lvl = m => m <= 0 ? 0 : m < 30 ? 1 : m < 60 ? 2 : m < 90 ? 3 : 4;
+  let g = "", lastM = -1;
+  ["", "M", "", "W", "", "F", ""].forEach((l, i) => { if(l) g += `<text class="ax" x="${L-6}" y="${T + i*(cs+gap) + cs - 2}" text-anchor="end">${l}</text>`; });
+  for(let c = 0; c < cols; c++) for(let r = 0; r < 7; r++){
+    const d = addDays(start, c*7 + r); if(d.getFullYear() !== y) continue;
+    if(r === 0 || (d.getDate() === 1)){ if(d.getMonth() !== lastM && d.getDate() <= 7){ lastM = d.getMonth(); g += `<text class="ax" x="${L + c*(cs+gap)}" y="${T-6}">${MON3[d.getMonth()]}</text>`; } }
+    const v = by.get(ymd(d)), m = v ? v.mins : 0, fut = d > td;
+    g += `<rect class="hm l${fut ? "f" : lvl(m)}${sameDay(d, td) ? " today" : ""}" x="${L + c*(cs+gap)}" y="${T + r*(cs+gap)}" width="${cs}" height="${cs}" rx="2.5" data-tip="${DOW[d.getDay()]} ${MON3[d.getMonth()]} ${d.getDate()}: ${v ? `${v.n} workout${v.n===1?"":"s"} · ${fmtHrs(m)}${v.mi ? " · " + fmtNum(v.mi,1) + " mi" : ""}` : fut ? "ahead" : "rest day"}"/>`;
+  }
+  return `<svg class="ch hmap" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="width:${W}px;height:${H}px" role="img" aria-label="Daily workout time in ${y}">${g}</svg>`;
+}
+function streaks(by, y){
+  const td = todayDate(); let cur = 0, d = by.get(ymd(td)) ? td : addDays(td, -1);
+  while(by.get(ymd(d))){ cur++; d = addDays(d, -1); }
+  let best = 0, run = 0; for(let x = new Date(y, 0, 1); x <= (td.getFullYear() === y ? td : new Date(y, 11, 31)); x = addDays(x, 1)){ if(by.get(ymd(x))){ run++; best = Math.max(best, run); } else run = 0; }
+  return { cur, best };
+}
+function vFitDash(){
+  const y = Y(), td = todayDate(), goalH = num(get("settings").fitGoalHrs) || 5;
+  const by = fitDaily([y - 1, y, td.getFullYear()]);
+  const yearBy = new Map([...by].filter(([k]) => k.startsWith(String(y)))), prevBy = new Map([...by].filter(([k]) => k.startsWith(String(y - 1))));
+  if(!yearBy.size && !prevBy.size) return "";
+  const ws = weekStart(td), tw = sumRange(by, ws, td), lw = sumRange(by, addDays(ws, -7), addDays(ws, -1));
+  const st = streaks(by, y), wk = weeklyChart(by, goalH), cum = cumulativeChart(y, yearBy, prevBy);
+  const weeksSoFar = Math.max(1, Math.ceil((td.getFullYear() === y ? dayOfYear(td) : yearLen(y)) / 7));
+  const yTot = [...yearBy.values()].reduce((a, v) => a + v.mins, 0);
+  const ahead = cum.total - cum.prevSame;
+  return `<section class="fdash">
+    <div class="fhero">
+      <div class="hcard"><span class="cap">This week</span><div class="hv">${fmtHrs(tw.mins)}</div><div class="hs">${fmtNum(tw.mi,1)} mi · ${tw.n} workout${tw.n===1?"":"s"}</div>${deltaTxt(tw.mins/60, lw.mins/60, "h", v => fmtNum(v,1))}</div>
+      <div class="hcard ringcard">${ring(tw.mins/60/goalH, Math.round(tw.mins/60/goalH*100) + "%", "OF GOAL")}<div><span class="cap">Weekly goal</span>
+        <label class="goalin"><input class="ln" id="fit-goal" type="number" inputmode="decimal" min="0.5" max="40" step="0.5" value="${goalH}" aria-label="Weekly goal in hours"> hours</label>
+        <div class="hs">${tw.mins/60 >= goalH ? "Goal reached!" : `${fmtHrs(Math.max(0, goalH*60 - tw.mins))} to go`}</div>
+        <div class="hs">Met ${wk.hit} of the last 11 weeks</div></div></div>
+      <div class="hcard"><span class="cap">Day streak</span><div class="hv">${st.cur} day${st.cur===1?"":"s"}</div><div class="hs">Best in ${y}: ${st.best} day${st.best===1?"":"s"}</div><span class="dl">${st.cur ? "Keep it going" : "Log a workout today to start one"}</span></div>
+      <div class="hcard"><span class="cap">Weekly average · ${y}</span><div class="hv">${fmtHrs(yTot / weeksSoFar)}</div><div class="hs">Last 11 weeks: ${fmtHrs(wk.avg*60)}</div><span class="dl">${yearBy.size} active days</span></div>
+    </div>
+    <div class="fcharts">
+      <section class="dc"><div class="dch"><h2 style="--c:var(--accent)">Hours per week</h2><span class="muted" style="font-size:12.5px">Last 12 weeks</span></div>${wk.svg}</section>
+      <section class="dc"><div class="dch"><h2>Miles through ${y}</h2><span class="muted" style="font-size:12.5px">${cum.hasPrev ? `${fmtNum(Math.abs(ahead),1)} mi ${ahead >= 0 ? "ahead of" : "behind"} ${y-1}` : `${fmtNum(cum.total,1)} mi so far`}</span></div>
+        ${cum.svg}${cum.hasPrev ? `<div class="legend"><span><i></i>${y}</span><span><i class="prevk"></i>${y-1}</span></div>` : ""}</section>
+    </div>
+    <section class="dc"><div class="dch"><h2>Activity calendar · ${y}</h2><span class="legend hml"><span>Less</span><i class="hm l0"></i><i class="hm l1"></i><i class="hm l2"></i><i class="hm l3"></i><i class="hm l4"></i><span>More</span></span></div>
+      <div class="chscroll" id="hmscroll">${heatmap(y, yearBy)}</div></section>
+  </section>`;
+}
+
 function vFitYear(){
   const y = Y(), F = fitYear(y), td = todayDate(), curM = td.getFullYear()===y ? td.getMonth() : 11;
   if(!F.tot.n) return `<section class="ysum"><div class="tbar" style="margin:0"><p class="lbl" style="margin:0">${y} so far</p></div><div class="empty">No workouts logged in ${y} yet. Log one below${G.mode === "direct" ? " or connect Strava" : ""}, and your year totals will show here.</div></section>`;
@@ -2034,7 +2171,7 @@ function vFitness(){
   }).join("");
   const h = Math.floor(mins/60), mm = Math.round(mins%60);
   return head(`Fitness · ${MONTHS[m]}`, `Log rides, runs, gym sessions and anything else that moves you`, monthChips()) +
-  `<div class="sec">${stPanel()}${vFitYear()}<p class="lbl" style="margin:6px 0 -10px">${MONTHS[m]}</p><form class="fform" id="fitform" autocomplete="off">
+  `<div class="sec">${vFitDash()}${vFitYear()}${stPanel()}<p class="lbl" style="margin:6px 0 -10px">${MONTHS[m]}</p><form class="fform" id="fitform" autocomplete="off">
     <label><span>Date</span><input class="ln" type="date" id="fx-date" value="${ymd(S.day)}" min="${mk(y,m)}-01" max="${mk(y,m)}-${pad(dim(y,m))}"></label>
     <label><span>Type</span><select class="ln" id="fx-type">${FIT_TYPES.map(t=>`<option>${t}</option>`).join("")}</select></label>
     <label><span>Minutes</span><input class="ln" id="fx-min" inputmode="numeric" placeholder="45"></label>
@@ -2191,6 +2328,7 @@ function render(){
   main.innerHTML = VIEWS[S.view]();
   if(S.view==="budget") paintBudget();
   if(S.view==="goals") paintHabits();
+  if(S.view==="fitness"){ const hs = document.getElementById("hmscroll"); if(hs){ const t = hs.querySelector(".hm.today"); if(t){ const x = +t.getAttribute("x"); hs.scrollLeft = Math.max(0, x - hs.clientWidth + 60); } else hs.scrollLeft = hs.scrollWidth; } }
   const prim = ["home","day","week","month"];
   document.querySelectorAll("#bnav [data-go]").forEach(b => { if(b.dataset.go===S.view) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
   const bm = document.getElementById("bn-more"); if(prim.includes(S.view)) bm.removeAttribute("aria-current"); else bm.setAttribute("aria-current","page");
@@ -2221,6 +2359,7 @@ drawerEl.addEventListener("input", e => {
   if(e.target.id==="rz-type"){ S.rzText = e.target.value; const g = document.getElementById("rz-go"); if(g) g.disabled = S.rzText.trim().toUpperCase()!=="RESET"; }
 });
 drawerEl.addEventListener("change", e => { if(e.target.id==="rz-keep") S.rzKeep = e.target.checked; });
+main.addEventListener("change", e => { if(e.target.id==="fit-goal"){ const v = Math.max(0.5, Math.min(40, num(e.target.value) || 5)); edit("settings", "fitGoalHrs", v); render(); } });
 main.addEventListener("input", e => { if(e.target.id==="st-id"){ ST.cfg.clientId = e.target.value.trim(); stSave(); } else if(e.target.id==="st-secret"){ ST.cfg.clientSecret = e.target.value.trim(); stSave(); } });
 drawerEl.addEventListener("change", e => { if(e.target.id==="logo-file"){ handleLogo(e.target.files && e.target.files[0]); e.target.value = ""; } });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && (S.menu || S.sheet)) closeMenu(); });

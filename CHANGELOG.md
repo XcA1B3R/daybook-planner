@@ -2,6 +2,20 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v2.0 · 2026-10-24
+
+- The Fitness page now opens with a dashboard:
+  - **This week:** time, miles and workouts so far, compared with last week.
+  - **Weekly goal:** a ring showing progress toward a weekly hours goal you set (5 hours to start), plus how many of the last 11 weeks you met it.
+  - **Day streak:** your current run of days with a workout, and your best this year.
+  - **Weekly average:** for the year and for the last 11 weeks.
+  - **Hours per week:** a chart of the last 12 weeks with your goal line.
+  - **Miles through the year:** a running total compared with last year at the same point, with how far ahead or behind you are.
+  - **Activity calendar:** a square for every day, shaded by workout time. It opens scrolled to today.
+- Tap or hover any bar, point or day for its numbers.
+- The year summary and activity cards follow the dashboard, and the Strava panel now sits below them.
+- Chart scales use finer steps, so a year with 2,000 miles tops out at 2,500 instead of 5,000.
+
 ## v1.9 · 2026-10-24
 
 - Tap a workout on the Day grid or in the Fitness log to open a details card in the planner.
