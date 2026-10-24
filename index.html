@@ -111,6 +111,26 @@ button{font:inherit;color:inherit;cursor:pointer}
 .logoprev img,.logoprev svg{width:56px;height:56px;object-fit:contain;display:block}
 label.btn{display:inline-block;cursor:pointer}
 .hint.err{color:var(--bad)}
+.ysum{display:flex;flex-direction:column;gap:14px}
+.ytot{grid-template-columns:repeat(auto-fit,minmax(96px,1fr))}
+.ytot .v{font-size:22px;white-space:nowrap}
+.tcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:14px;align-items:start}
+.tcard{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0;border-top:5px solid var(--c)}
+.tcard header{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.tchip{background:var(--c);color:var(--tab-ink);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px}
+.tcount{font-size:14px;color:var(--muted)}
+.tcount b{font:400 30px/1 var(--serif);color:var(--ink);margin-right:3px}
+.tcard dl{margin:0;display:flex;flex-direction:column;gap:5px}
+.tcard dl div{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;border-bottom:1px dotted var(--line);padding-bottom:4px}
+.tcard dt{color:var(--muted)}
+.tcard dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.mbars{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px;height:64px;align-items:end}
+.mb{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:2px;cursor:default}
+.mb i{display:block;width:100%;background:var(--c);border-radius:3px 3px 0 0;border:1px solid color-mix(in srgb, var(--c) 60%, var(--ink));border-bottom:0;box-sizing:border-box}
+.mb i[style*="height:0%"]{border:0}
+.mb em{font-style:normal;font:500 9.5px var(--mono);color:var(--muted)}
+.mb.cur em{color:var(--ink);font-weight:700}
+.mb.fut i{opacity:.35}
 .stpanel{display:flex;flex-direction:column;gap:12px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--paper)}
 .sthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .sthead b{font:400 20px var(--serif)}
@@ -1211,14 +1231,14 @@ function stImport(list){
     const date = loc.slice(0, 10), d = parseYmd(date), k = "f" + mk(d.getFullYear(), d.getMonth());
     (byMonth[k] = byMonth[k] || []).push({ date, type: ST_TYPES[a.sport_type] || ST_TYPES[a.type] || "Other", mins: String(Math.round((a.moving_time || a.elapsed_time || 0) / 60)),
       dist: a.distance ? (a.distance / 1609.344).toFixed(1) : "", notes: a.name || "", strava: String(a.id), at: (+loc.slice(11, 13)) * 60 + (+loc.slice(14, 16)),
-      el: Math.round((a.elapsed_time || a.moving_time || 0) / 60) });
+      el: Math.round((a.elapsed_time || a.moving_time || 0) / 60), elev: a.total_elevation_gain ? String(Math.round(a.total_elevation_gain * 3.28084)) : "" });
   });
   let added = 0;
   Object.entries(byMonth).forEach(([k, items]) => {
     const doc = clone(get(k)); doc.log = (doc.log || []).filter(Boolean); let ch = false;
     items.forEach(it => {
       const ex = doc.log.find(e => e.strava === it.strava);
-      if(ex){ if(ex.notes !== it.notes || ex.mins !== it.mins || ex.dist !== it.dist || ex.type !== it.type){ Object.assign(ex, it); ch = true; } return; }
+      if(ex){ if(ex.notes !== it.notes || ex.mins !== it.mins || ex.dist !== it.dist || ex.type !== it.type || (ex.elev || "") !== it.elev){ Object.assign(ex, it); ch = true; } return; }
       doc.log.push(it); added++; ch = true;
     });
     if(ch) put(k, doc);
@@ -1922,6 +1942,61 @@ function paintBudget(){
   set("bt-plan", money(plan)); set("bt-act", money(act)); set("bt-diff", money(plan-act), plan-act<0?"neg":"pos");
 }
 
+const FIT_COLOR = { Ride:7, Walk:1, Run:4, Swim:6, Strength:5, Hike:3, Kayak:8, Mobility:2, Other:3 };
+const FIT_PLURAL = { Ride:["ride","rides"], Walk:["walk","walks"], Run:["run","runs"], Swim:["swim","swims"], Strength:["strength session","strength sessions"],
+  Hike:["hike","hikes"], Kayak:["paddle","paddles"], Mobility:["mobility session","mobility sessions"], Other:["other workout","other workouts"] };
+const fmtHrs = m => { const h = Math.floor(m/60), mm = Math.round(m%60); return h ? `${h}h${mm ? " " + pad(mm) + "m" : ""}` : `${mm}m`; };
+const fmtNum = (n, d=0) => Number(n).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+function fitYear(y){
+  const types = {}, days = new Set(), tot = { n:0, mins:0, mi:0, elev:0 };
+  for(let m = 0; m < 12; m++) ((store.get("f" + mk(y, m)) || {}).log || []).forEach(e => {
+    if(!e || !e.date) return;
+    const t = FIT_PLURAL[e.type] ? e.type : "Other", mins = num(e.mins), mi = num(e.dist), elev = num(e.elev);
+    const T = types[t] = types[t] || { n:0, mins:0, mi:0, elev:0, longMi:0, longMin:0, longMiAt:"", longMinAt:"", byMonth: Array.from({length:12}, () => ({ n:0, mins:0, mi:0 })) };
+    T.n++; T.mins += mins; T.mi += mi; T.elev += elev;
+    if(mi > T.longMi){ T.longMi = mi; T.longMiAt = e.date; }
+    if(mins > T.longMin){ T.longMin = mins; T.longMinAt = e.date; }
+    const bm = T.byMonth[m]; bm.n++; bm.mins += mins; bm.mi += mi;
+    tot.n++; tot.mins += mins; tot.mi += mi; tot.elev += elev; days.add(e.date);
+  });
+  return { types, tot, days: days.size };
+}
+function vFitYear(){
+  const y = Y(), F = fitYear(y), td = todayDate(), curM = td.getFullYear()===y ? td.getMonth() : 11;
+  if(!F.tot.n) return `<section class="ysum"><div class="tbar" style="margin:0"><p class="lbl" style="margin:0">${y} so far</p></div><div class="empty">No workouts logged in ${y} yet. Log one below${G.mode === "direct" ? " or connect Strava" : ""}, and your year totals will show here.</div></section>`;
+  const order = Object.keys(F.types).sort((a,b) => (a==="Ride" ? -2 : a==="Walk" ? -1 : 0) - (b==="Ride" ? -2 : b==="Walk" ? -1 : 0) || F.types[b].n - F.types[a].n);
+  const dmy = d => { const x = parseYmd(d); return `${MON3[x.getMonth()]} ${x.getDate()}`; };
+  const cards = order.map(t => {
+    const T = F.types[t], hasMi = T.mi > 0.05, metric = hasMi ? "mi" : "mins";
+    const vals = T.byMonth.map(b => hasMi ? b.mi : b.mins), mx = Math.max(...vals, 1);
+    const bars = T.byMonth.map((b, i) => `<span class="mb${i===curM ? " cur" : ""}${i > curM ? " fut" : ""}" data-tip="${MONTHS[i]}: ${b.n} ${FIT_PLURAL[t][b.n===1?0:1]} · ${hasMi ? fmtNum(b.mi,1) + " mi · " : ""}${fmtHrs(b.mins)}"><i style="height:${Math.max(vals[i] ? 6 : 0, Math.round(vals[i]/mx*100))}%"></i><em>${MON3[i][0]}</em></span>`).join("");
+    const rows = [
+      ["Time", fmtHrs(T.mins)],
+      hasMi ? ["Miles", fmtNum(T.mi, 1)] : null,
+      hasMi ? ["Average", `${fmtNum(T.mi / T.n, 1)} mi · ${fmtHrs(T.mins / T.n)}`] : ["Average", fmtHrs(T.mins / T.n)],
+      hasMi ? ["Longest", `${fmtNum(T.longMi, 1)} mi · ${dmy(T.longMiAt)}`] : ["Longest", `${fmtHrs(T.longMin)} · ${dmy(T.longMinAt)}`],
+      T.elev > 0 ? ["Climbing", `${fmtNum(T.elev)} ft`] : null,
+    ].filter(Boolean);
+    return `<section class="tcard" style="--c:${tc(FIT_COLOR[t] || 3)}">
+      <header><span class="tchip">${t}</span><span class="tcount"><b>${fmtNum(T.n)}</b> ${FIT_PLURAL[t][T.n===1?0:1]}</span></header>
+      <dl>${rows.map(([k,v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
+      <div class="mbars" role="img" aria-label="${t} ${metric} by month">${bars}</div>
+    </section>`;
+  }).join("");
+  const ridesWalks = ["Ride","Walk"].filter(t => F.types[t]).map(t => `${fmtNum(F.types[t].n)} ${FIT_PLURAL[t][F.types[t].n===1?0:1]}`).join(" and ");
+  return `<section class="ysum">
+    <div class="tbar" style="margin:0"><p class="lbl" style="margin:0">${y} so far</p>${ridesWalks ? `<span class="muted" style="font-size:13.5px">${ridesWalks} completed</span>` : ""}</div>
+    <div class="sum ytot">
+      <div class="stat"><span class="cap">Workouts</span><div class="v">${fmtNum(F.tot.n)}</div></div>
+      <div class="stat"><span class="cap">Hours</span><div class="v">${fmtNum(F.tot.mins/60, 1)}</div></div>
+      <div class="stat"><span class="cap">Miles</span><div class="v">${fmtNum(F.tot.mi, 1)}</div></div>
+      <div class="stat"><span class="cap">Active days</span><div class="v">${fmtNum(F.days)}</div></div>
+      ${F.tot.elev > 0 ? `<div class="stat"><span class="cap">Climbing</span><div class="v">${fmtNum(F.tot.elev)} ft</div></div>` : ""}
+    </div>
+    <div class="tcards">${cards}</div>
+  </section>`;
+}
+
 function vFitness(){
   const y = Y(), m = M(), k = "f"+mk(y,m), log = (get(k).log||[]).map((e,i)=>({...e,i}));
   const mins = log.reduce((a,e)=>a+num(e.mins),0), miles = log.reduce((a,e)=>a+num(e.dist),0);
@@ -1937,7 +2012,7 @@ function vFitness(){
   }).join("");
   const h = Math.floor(mins/60), mm = Math.round(mins%60);
   return head(`Fitness · ${MONTHS[m]}`, `Log rides, runs, gym sessions and anything else that moves you`, monthChips()) +
-  `<div class="sec">${stPanel()}<form class="fform" id="fitform" autocomplete="off">
+  `<div class="sec">${stPanel()}${vFitYear()}<p class="lbl" style="margin:6px 0 -10px">${MONTHS[m]}</p><form class="fform" id="fitform" autocomplete="off">
     <label><span>Date</span><input class="ln" type="date" id="fx-date" value="${ymd(S.day)}" min="${mk(y,m)}-01" max="${mk(y,m)}-${pad(dim(y,m))}"></label>
     <label><span>Type</span><select class="ln" id="fx-type">${FIT_TYPES.map(t=>`<option>${t}</option>`).join("")}</select></label>
     <label><span>Minutes</span><input class="ln" id="fx-min" inputmode="numeric" placeholder="45"></label>

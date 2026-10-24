@@ -2,6 +2,12 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v1.8 · 2026-10-24
+
+- The Fitness page opens with a **year so far** summary for the selected year: total workouts, hours, miles, active days and climbing.
+- Each activity type gets a card, with rides and walks first. A card shows the count, total time and miles, average per workout, longest effort with its date, climbing, and a month-by-month chart. Tap a bar for that month's numbers.
+- Strava imports now save elevation gain. Tap **Re-check this year** once to add it to workouts already imported.
+
 ## v1.7 · 2026-10-24
 
 - **Strava sync** on the GitHub site. Set it up in the Strava panel at the top of the Fitness page.
