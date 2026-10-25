@@ -2,6 +2,18 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v2.1 · 2026-10-24
+
+- **Google Calendar renews itself.** When the one-hour Google sign-in runs out, it renews the next time you tap anywhere in the planner. You may see a Google window flash for a moment, and there's no button to press. The last-known calendar stays on screen in the meantime. If Google can't renew automatically, an **Update calendar** button appears.
+- **New Health page:**
+  - A daily check-in for weight, sleep, steps, resting heart rate, blood pressure, water, energy (1–5) and notes. It saves as you type, and the arrows move between days.
+  - Summary tiles: latest weight and its 30-day change, 7-day averages for sleep, steps and resting heart rate, and your latest blood pressure with its standard category (normal, elevated, stage 1, stage 2).
+  - Charts: weight over 90 days, sleep and steps over 14 days, resting heart rate over 30 days, blood pressure ranges over 30 days, and water. Tap any point for details.
+  - Lists for medications and supplements, and for appointments. Upcoming appointments also appear in Home's "Coming up".
+  - Targets for weight, sleep, steps and water, shown as goal lines.
+- A Health card on Home shows your latest weight, last night's sleep, today's steps and a 30-day weight line.
+- Health data is entered by hand. Google's health data can't be read by a web page today.
+
 ## v3.0 beta · testing at /beta/ (not yet the main version)
 
 - Sign in with Google, then a 6-digit code from an authenticator app such as Google Authenticator. The first sign-in walks you through adding Daybook to the app with a QR code or setup key.

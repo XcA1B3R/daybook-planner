@@ -130,6 +130,20 @@ button{font:inherit;color:inherit;cursor:pointer}
 .logoprev img,.logoprev svg{width:56px;height:56px;object-fit:contain;display:block}
 label.btn{display:inline-block;cursor:pointer}
 .hint.err{color:var(--bad)}
+.sec-health{--sec:var(--t4)}
+.hcheck{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:14px;border-top:5px solid var(--sec)}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px 16px}
+.hlf{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hlin{display:flex;align-items:baseline;gap:6px}
+.hlin input.ln{font:500 18px var(--mono);font-variant-numeric:tabular-nums}
+.hlin em{font-style:normal;font-size:13px;color:var(--muted);white-space:nowrap}
+.fhero.hl5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.dl.bp-good{color:var(--good)} .dl.bp-warn{color:color-mix(in srgb, var(--bad) 65%, var(--ink))} .dl.bp-bad{color:var(--bad)}
+svg.ch .bpbar{fill:var(--accent)}
+.btbl.appt tr.past td{opacity:.55}
+.btbl td input.ln[type=date],.btbl td input.ln[type=time]{min-width:7.5em}
+@media (max-width:1180px){ .fhero.hl5 .hcard .hv{font-size:26px} .fhero.hl5 .hcard{padding:12px 13px} }
+@media (max-width:720px){ .fhero.hl5{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} .fhero.hl5 .hcard:last-child{grid-column:1 / -1} .hgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
 .fdash{display:flex;flex-direction:column;gap:16px}
 .fhero{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .hcard{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -794,7 +808,7 @@ const MONTHS = ["January","February","March","April","May","June","July","August
 const MON3 = MONTHS.map(m => m.slice(0,3));
 const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const DOWL = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-const TABS = [["home","Home",6],["year","Year",1],["month","Month",2],["week","Week",3],["day","Day",4],["goals","Goals & Habits",5],["budget","Budget",6],["fitness","Fitness",7],["family","Family",2],["notes","Work Notes",8]];
+const TABS = [["home","Home",6],["year","Year",1],["month","Month",2],["week","Week",3],["day","Day",4],["goals","Goals & Habits",5],["budget","Budget",6],["fitness","Fitness",7],["family","Family",2],["health","Health",4],["notes","Work Notes",8]];
 const MONTH_COLORS = [1,2,3,4,5,6,7,8,1,2,3,4];
 const EXP_CATS = ["Housing","Utilities","Groceries","Dining out","Gas & auto","Insurance","Phone & internet","Debt payments","Health","Subscriptions","Personal","Gifts","Savings","Other"];
 const FIT_TYPES = ["Ride","Run","Walk","Strength","Swim","Hike","Kayak","Mobility","Other"];
@@ -1172,25 +1186,42 @@ function loadGIS(){
     sc.onload = () => res(); sc.onerror = () => rej(new Error("gis")); document.head.appendChild(sc);
   });
 }
-async function dAuth(consent){
-  const cid = (get("settings").gClientId || "").trim();
-  if(!cid){ G.state = "setup"; paintG(); openMenu(); return; }
-  try { await loadGIS(); } catch(e){ G.state = "error"; G.msg = "Couldn't reach Google sign-in. Check your internet connection and try again."; paintG(); softRender(); return; }
+function ensureTc(cid){
+  if(!(window.google && google.accounts && google.accounts.oauth2)) return false;
   if(!G.tc || G.tcId !== cid){
     G.tcId = cid;
     G.tc = google.accounts.oauth2.initTokenClient({ client_id: cid, scope: GSCOPE,
       callback: async resp => {
-        if(resp.error){ G.state = gOn() ? "needs_tap" : "off"; G.msg = resp.error==="access_denied" ? "Google sign-in was cancelled. Tap to try again." : `Google sign-in didn't finish (${resp.error}).`; paintG(); softRender(); return; }
+        const quiet = G.silent; G.silent = false;
+        if(resp.error){ G.state = gOn() ? "needs_tap" : "off"; G.msg = quiet ? "" : resp.error==="access_denied" ? "Google sign-in was cancelled. Tap to try again." : `Google sign-in didn't finish (${resp.error}).`; if(quiet) G.renewFailed = true; paintG(); softRender(); return; }
+        G.renewFailed = false;
         G.tok = { access_token: resp.access_token, exp: Date.now() + (Number(resp.expires_in) || 3600) * 1000 }; saveTok();
         if(!gOn()){ const doc = clone(get("settings")); doc.gcalOn = true; put("settings", doc); toast("Google Calendar connected"); }
         G.state = "ok"; G.msg = ""; G.dLast = {};
         await dCalendars(); dSync(true);
       },
-      error_callback: err => { G.state = gOn() ? "needs_tap" : "off"; G.msg = err && err.type==="popup_closed" ? "The Google sign-in window closed before finishing. Tap to try again." : "Google sign-in was blocked. Allow pop-ups for this site, then tap to try again."; paintG(); softRender(); }
+      error_callback: err => { const quiet = G.silent; G.silent = false; if(quiet) G.renewFailed = true; G.state = gOn() ? "needs_tap" : "off"; G.msg = err && err.type==="popup_closed" ? (quiet ? "" : "The Google sign-in window closed before finishing. Tap to try again.") : "Google sign-in was blocked. Allow pop-ups for this site, then tap Update calendar."; paintG(); softRender(); }
     });
   }
+  return true;
+}
+async function dAuth(consent){
+  const cid = (get("settings").gClientId || "").trim();
+  if(!cid){ G.state = "setup"; paintG(); openMenu(); return; }
+  try { await loadGIS(); } catch(e){ G.state = "error"; G.msg = "Couldn't reach Google sign-in. Check your internet connection and try again."; paintG(); softRender(); return; }
+  ensureTc(cid); G.silent = false;
   G.tc.requestAccessToken({ prompt: consent ? "consent" : "" });
 }
+/* renew quietly on the next tap anywhere, so there's no button to press */
+let renewAt = 0;
+document.addEventListener("click", e => {
+  if(G.mode !== "direct" || !gOn() || !G.tc) return;
+  if(G.tok && G.tok.exp > Date.now() + 5*60*1000) return;
+  if(e.target.closest && e.target.closest('input, textarea, select, [data-act="gconnect"], [data-act="grefresh"], [data-act="gdisc"], .drawer')) return;
+  if(Date.now() - renewAt < (G.renewFailed ? 10 : 2) * 60 * 1000) return;
+  renewAt = Date.now(); G.silent = true;
+  try { G.tc.requestAccessToken({ prompt: "" }); } catch(_) { G.silent = false; }
+}, true);
 async function dFetch(path, params){
   const u = new URL("https://www.googleapis.com/calendar/v3/" + path);
   Object.entries(params || {}).forEach(([k, v]) => u.searchParams.set(k, v));
@@ -1391,6 +1422,7 @@ function startDirect(){
   else if(tokValid()){ G.state = "ok"; dCalendars().then(() => dSync(true)); }
   else G.state = "needs_tap";
   setInterval(() => { if(document.visibilityState === "visible") dSync(false); }, 5*60*1000);
+  if(cid && gOn()) loadGIS().then(() => ensureTc(cid)).catch(() => {});
   stHandleReturn().then(handled => { if(handled) render(); else setTimeout(stAutoSync, 1500); });
   setInterval(() => { if(document.visibilityState === "visible") stAutoSync(); }, 10*60*1000);
   document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") stAutoSync(); });
@@ -1406,7 +1438,7 @@ function gStatusText(){
     case "needs_reauth": return { t: "Calendar needs sign-in", cls:"warn" };
     case "approval": return { t: "Calendar needs your OK", cls:"warn" };
     case "error": return { t: "Calendar problem", cls:"warn" };
-    case "needs_tap": return { t: G.updated ? `Calendar from ${fmtTime(new Date(G.updated))}` : "Calendar needs sign-in", cls:"warn" };
+    case "needs_tap": return { t: G.updated ? `Calendar from ${fmtTime(new Date(G.updated))}` : "Calendar needs sign-in", cls: G.renewFailed || G.msg || !G.updated ? "warn" : "" };
     default: return null;
   }
 }
@@ -1418,7 +1450,7 @@ function gHelp(){
     case "blocked": return "Your organization doesn't allow Google Calendar here.";
     case "unavailable": return "Open the planner in the Claude app or on claude.ai while signed in to use Google Calendar.";
     case "setup": return "Add your Google sign-in ID in Customize › Google Calendar to connect your calendar.";
-    case "needs_tap": return G.msg || (G.updated ? `Showing your calendar as of ${fmtTime(new Date(G.updated))}. Tap Update to sign in to Google again and get the latest.` : "Tap Sign in with Google to load your calendar.");
+    case "needs_tap": return G.msg || (G.renewFailed ? `Showing your calendar as of ${G.updated ? fmtTime(new Date(G.updated)) : "the last update"}. Google didn't renew automatically, so tap Update calendar.` : G.updated ? `Showing your calendar as of ${fmtTime(new Date(G.updated))}. It refreshes the next time you tap anywhere in the planner.` : "Tap Sign in with Google to load your calendar.");
     case "error": return G.msg;
     case "loading": case "checking": return "Loading your events…";
     case "ok": return `Showing ${G.cals.length ? G.cals.filter(c=>!gHidden().has(c.id)).length + " calendar" + (G.cals.filter(c=>!gHidden().has(c.id)).length===1?"":"s") : "your calendar"}. Updates every few minutes while the planner is open.`;
@@ -1440,6 +1472,7 @@ function gButtons(){
 }
 function gBar(compact){
   if(G.state==="ok" && gOn()) return "";
+  if(G.mode==="direct" && G.state==="needs_tap" && gOn() && G.updated && !G.msg && !G.renewFailed) return "";
   if(G.state==="loading" || G.state==="checking") return compact ? "" : `<div class="gbar"><span class="gicon">G</span><span class="gtext">Loading Google Calendar…</span></div>`;
   return `<div class="gbar"><span class="gicon">G</span><span class="gtext">${esc(gHelp())}</span>${gButtons()}</div>`;
 }
@@ -1581,8 +1614,8 @@ function vHome(){
   // coming up
   const ups = [];
   for(let i=0; i<21 && ups.length<6; i++){
-    const dt = addDays(td,i), h = holOf(dt), st = dayStickers(ymd(dt));
-    if(h || st.length) ups.push(`<li><span class="d">${i===0?"Today":i===1?"Tomorrow":`${DOW[dowIdx(dt)]} ${MON3[dt.getMonth()]} ${dt.getDate()}`}</span><span class="stks">${h?`<span class="stk" style="--c:var(--t3)">${esc(h)}</span>`:""}${st.map(stickerHtml).join("")}</span></li>`);
+    const dt = addDays(td,i), h = holOf(dt), st = dayStickers(ymd(dt)), ap = hlAppts(ymd(dt));
+    if(h || st.length || ap.length) ups.push(`<li><span class="d">${i===0?"Today":i===1?"Tomorrow":`${DOW[dowIdx(dt)]} ${MON3[dt.getMonth()]} ${dt.getDate()}`}</span><span class="stks">${ap.map(a0 => `<span class="stk" style="--c:var(--t4)">${esc([a0.time ? fmtMin(+a0.time.slice(0,2)*60 + +a0.time.slice(3,5)) : "", a0.who || a0.what].filter(Boolean).join(" "))}</span>`).join("")}${h?`<span class="stk" style="--c:var(--t3)">${esc(h)}</span>`:""}${st.map(stickerHtml).join("")}</span></li>`);
   }
   const upBody = ups.length ? `<ul class="upc">${ups.join("")}</ul>` : `<div class="dempty">Nothing on the next three weeks. Add stickers on a day page to see them here.</div>`;
 
@@ -1686,7 +1719,12 @@ function vHome(){
     ${card("s5","Debt payoff",2,["budget","Update"],debtBody)}
     ${card("s8","Workout minutes by month",7,["fitness","Fitness log"],fitBody)}
     ${card("s4",`Workout mix · ${MON3[m]}`,7,null,mixBody)}
-    ${card("s12","Work notes",8,["notes","All notes"],notesBody)}
+    ${card("s6","Health",4,["health","Health"],(() => {
+      const w = hlLatest("w", td), sl = hlLatest("sleep", td, 2), stp = hlDay(td).steps, any = w || sl || hlHas(hlDay(td), "steps");
+      return any ? `<div class="kpis"><div class="kpi"><span class="cap">Weight</span><div class="v">${w ? fmtNum(w.v,1) + " lb" : "—"}</div></div><div class="kpi"><span class="cap">Last sleep</span><div class="v">${sl ? fmtNum(sl.v,1) + " h" : "—"}</div></div><div class="kpi"><span class="cap">Steps today</span><div class="v">${hlHas(hlDay(td), "steps") ? fmtNum(num(stp)) : "—"}</div></div></div>${hlSeries("w", 30, td).filter(p => p.v != null).length >= 2 ? trendChart(hlSeries("w", 30, td), { dec: 1, unit: "lb", label: "Weight, last 30 days" }) : ""}`
+        : dempty("Track weight, sleep, steps, blood pressure and more.", "health", "Do today's check-in");
+    })())}
+    ${card("s6","Work notes",8,["notes","All notes"],notesBody)}
   </div>`;
 }
 
@@ -1827,7 +1865,7 @@ function quickAdd(text){
 }
 function shiftBy(n){
   const y = Y(), m = M(), d = S.day.getDate();
-  if(S.view==="day") S.day = addDays(S.day, n);
+  if(S.view==="day" || S.view==="health") S.day = addDays(S.day, n);
   else if(S.view==="week" || S.view==="family") S.day = addDays(S.day, 7*n);
   else { let tm = m+n, ty = y + Math.floor(tm/12); tm = ((tm%12)+12)%12; S.day = new Date(ty, tm, Math.min(d, dim(ty,tm))); }
   render();
@@ -2241,6 +2279,122 @@ function vNotes(){
   `<div class="sec">${filt}<div class="notes"><div class="nlist">${items || `<p class="muted" style="margin:0;font-size:14px">Nothing filed yet.</p>`}</div>${editor}</div></div>`;
 }
 
+/* ---------- Health (manual entries; doc "hl"+yyyy-mm holds days, doc "health" holds targets, medications, appointments) ---------- */
+const HL = [
+  ["w", "Weight", "lb", "decimal", 1], ["sleep", "Sleep", "hours", "decimal", 1], ["steps", "Steps", "", "numeric", 0], ["rhr", "Resting heart rate", "bpm", "numeric", 0],
+  ["sys", "Blood pressure, top", "mmHg", "numeric", 0], ["dia", "Blood pressure, bottom", "mmHg", "numeric", 0], ["water", "Water", "oz", "numeric", 0],
+];
+const hlKey = d => "hl" + mk(d.getFullYear(), d.getMonth());
+const hlDay = d => (((store.get(hlKey(d)) || {}).days || {})[d.getDate()]) || {};
+const hlHas = (o, f) => o[f] != null && String(o[f]).trim() !== "" && isFinite(num(o[f]));
+function hlSeries(f, n, end){ const out = []; for(let i = n - 1; i >= 0; i--){ const d = addDays(end, -i), o = hlDay(d); out.push({ d, v: hlHas(o, f) ? num(o[f]) : null }); } return out; }
+function hlLatest(f, end, back){ for(let i = 0; i < (back || 120); i++){ const d = addDays(end, -i), o = hlDay(d); if(hlHas(o, f)) return { d, v: num(o[f]) }; } return null; }
+const hlAvg = pts => { const v = pts.filter(p => p.v != null).map(p => p.v); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+function bpLabel(sys, dia){
+  if(sys >= 140 || dia >= 90) return ["High (stage 2)", "bad"];
+  if(sys >= 130 || dia >= 80) return ["High (stage 1)", "warn"];
+  if(sys >= 120) return ["Elevated", "warn"];
+  return ["Normal", "good"];
+}
+const hlAppts = key => ((get("health").appts) || []).filter(a => a && a.date === key && (a.what || a.who));
+function trendChart(pts, o){
+  const have = pts.map((p, i) => ({ ...p, i })).filter(p => p.v != null);
+  if(have.length < 2) return "";
+  const sm = window.innerWidth < 560, W = sm ? 360 : 600, H = sm ? 190 : 210, L = sm ? 38 : 46, R = o.goal != null ? (sm ? 40 : 52) : 14, T = 20, B = 24, iw = W - L - R, ih = H - T - B, n = pts.length;
+  let lo = Math.min(...have.map(p => p.v), o.goal ?? Infinity), hi = Math.max(...have.map(p => p.v), o.goal ?? -Infinity);
+  const padv = (hi - lo) * 0.18 || Math.max(1, hi * 0.05); lo -= padv; hi += padv; if(o.floor != null) lo = Math.max(o.floor, lo);
+  const X = i => L + i / (n - 1) * iw, Y = v => T + ih - (v - lo) / (hi - lo) * ih, f = v => fmtNum(v, o.dec || 0);
+  let g = "";
+  [0, .5, 1].forEach(t => { const v = lo + (hi - lo) * t, y = Y(v); g += `<line class="${t ? "grid" : "base"}" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text class="ax" x="${L-7}" y="${y+4}" text-anchor="end">${f(v)}</text>`; });
+  [0, Math.floor((n - 1) / 2), n - 1].forEach(i => { const d = pts[i].d; g += `<text class="ax" x="${X(i)}" y="${H-7}" text-anchor="${i===0?"start":i===n-1?"end":"middle"}">${i===n-1 && sameDay(d, todayDate()) ? "Today" : MON3[d.getMonth()] + " " + d.getDate()}</text>`; });
+  if(o.goal != null){ const y = Y(o.goal); g += `<line class="goal" x1="${L}" x2="${W-R+4}" y1="${y}" y2="${y}"/><text class="goallab" x="${W-R+7}" y="${y-3}">Goal</text><text class="goallab" x="${W-R+7}" y="${y+10}">${f(o.goal)}</text>`; }
+  const d0 = "M" + have.map(p => `${X(p.i).toFixed(1)},${Y(p.v).toFixed(1)}`).join("L");
+  g += `<path class="ln" d="${d0}"/>`;
+  have.forEach((p, k) => { const last = k === have.length - 1; if(!last && n > 45) return; g += `<circle class="pt" cx="${X(p.i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="${last ? 5.5 : 3.5}"/>`; if(last) g += `<text class="lab" x="${X(p.i)}" y="${Y(p.v) - 10}" text-anchor="end">${f(p.v)}${o.unit ? " " + o.unit : ""}</text>`; });
+  pts.forEach((p, i) => { if(p.v != null) g += `<rect class="hit" x="${X(i) - iw/(n-1)/2}" y="${T}" width="${iw/(n-1)}" height="${ih}" data-tip="${DOW[p.d.getDay()]} ${MON3[p.d.getMonth()]} ${p.d.getDate()}: ${f(p.v)}${o.unit ? " " + o.unit : ""}"/>`; });
+  return `<svg class="ch" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.label)}">${g}</svg>`;
+}
+function barChart(pts, o){
+  if(!pts.some(p => p.v)) return "";
+  const sm = window.innerWidth < 560, W = sm ? 360 : 600, H = sm ? 190 : 210, L = sm ? 38 : 46, R = o.goal != null ? (sm ? 40 : 52) : 10, T = 22, B = 24, iw = W - L - R, ih = H - T - B, n = pts.length;
+  const mx = niceMax(Math.max(o.goal || 0, ...pts.map(p => p.v || 0), 1)), slot = iw / n, bw = Math.min(26, slot * .64), f = v => fmtNum(v, o.dec || 0);
+  let g = "";
+  [0, .5, 1].forEach(t => { const y = T + ih - t*ih; g += `<line class="${t ? "grid" : "base"}" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text class="ax" x="${L-7}" y="${y+4}" text-anchor="end">${o.short ? o.short(mx*t) : f(mx*t)}</text>`; });
+  pts.forEach((p, i) => {
+    const x = L + i*slot + (slot - bw)/2, h = (p.v || 0) / mx * ih, cur = i === n - 1;
+    if(p.v) g += `<path class="bar${cur ? " cur" : ""}${o.goal != null && p.v < o.goal ? " dim" : ""}" d="${roundTop(x, T + ih - h, bw, h, 4)}"/>`;
+    if(i % (sm ? 3 : 2) === (n - 1) % (sm ? 3 : 2)) g += `<text class="ax" x="${x + bw/2}" y="${H-7}" text-anchor="middle">${cur && sameDay(p.d, todayDate()) ? "Today" : DOW[p.d.getDay()][0] + " " + p.d.getDate()}</text>`;
+    g += `<rect class="hit" x="${L + i*slot}" y="${T}" width="${slot}" height="${ih + B}" data-tip="${DOW[p.d.getDay()]} ${MON3[p.d.getMonth()]} ${p.d.getDate()}: ${p.v != null ? f(p.v) + (o.unit ? " " + o.unit : "") : "not logged"}"/>`;
+  });
+  if(o.goal != null){ const y = T + ih - o.goal / mx * ih; g += `<line class="goal" x1="${L}" x2="${W-R+4}" y1="${y}" y2="${y}"/><text class="goallab" x="${W-R+7}" y="${y-3}">Goal</text><text class="goallab" x="${W-R+7}" y="${y+10}">${o.short ? o.short(o.goal) : f(o.goal)}</text>`; }
+  return `<svg class="ch" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.label)}">${g}</svg>`;
+}
+function bpChart(end){
+  const n = 30, pts = []; for(let i = n - 1; i >= 0; i--){ const d = addDays(end, -i), o = hlDay(d); pts.push({ d, s: hlHas(o, "sys") ? num(o.sys) : null, di: hlHas(o, "dia") ? num(o.dia) : null }); }
+  const have = pts.filter(p => p.s != null && p.di != null); if(!have.length) return "";
+  const sm = window.innerWidth < 560, W = sm ? 360 : 600, H = sm ? 200 : 220, L = sm ? 38 : 46, R = sm ? 44 : 56, T = 16, B = 24, iw = W - L - R, ih = H - T - B;
+  let lo = Math.min(60, ...have.map(p => p.di)) - 5, hi = Math.max(140, ...have.map(p => p.s)) + 5;
+  const X = i => L + (i + .5) / n * iw, Y = v => T + ih - (v - lo) / (hi - lo) * ih;
+  let g = "";
+  [lo, (lo + hi) / 2, hi].forEach(v => { const y = Y(v); g += `<line class="grid" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text class="ax" x="${L-7}" y="${y+4}" text-anchor="end">${Math.round(v)}</text>`; });
+  [[120, "120"], [80, "80"]].forEach(([v, t]) => { const y = Y(v); g += `<line class="goal" x1="${L}" x2="${W-R+4}" y1="${y}" y2="${y}"/><text class="goallab" x="${W-R+7}" y="${y+4}">${t}</text>`; });
+  [0, 14, n - 1].forEach(i => { const d = pts[i].d; g += `<text class="ax" x="${X(i)}" y="${H-7}" text-anchor="middle">${MON3[d.getMonth()]} ${d.getDate()}</text>`; });
+  pts.forEach((p, i) => { if(p.s == null || p.di == null) return; const x = X(i), w = Math.max(5, Math.min(10, iw / n * .5));
+    g += `<rect class="bpbar" x="${(x - w/2).toFixed(1)}" y="${Y(p.s).toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(2, Y(p.di) - Y(p.s)).toFixed(1)}" rx="${(w/2).toFixed(1)}"/>`;
+    g += `<rect class="hit" x="${x - iw/n/2}" y="${T}" width="${iw/n}" height="${ih}" data-tip="${DOW[p.d.getDay()]} ${MON3[p.d.getMonth()]} ${p.d.getDate()}: ${p.s}/${p.di} mmHg"/>`; });
+  return `<svg class="ch" viewBox="0 0 ${W} ${H}" role="img" aria-label="Blood pressure, last 30 days">${g}</svg>`;
+}
+function vHealth(){
+  const d = S.day, td = todayDate(), k = hlKey(d), dd = d.getDate(), H0 = get("health"), goals = H0.goals || {};
+  const gW = hlHas(goals, "w") ? num(goals.w) : null, gS = hlHas(goals, "sleep") ? num(goals.sleep) : 8, gSt = hlHas(goals, "steps") ? num(goals.steps) : 8000, gWa = hlHas(goals, "water") ? num(goals.water) : 64;
+  const isToday = sameDay(d, td);
+  const fields = HL.map(([f, l, u, mode]) => `<label class="hlf"><span class="cap">${l}</span><span class="hlin">${I(k, `days.${dd}.${f}`, { mode, label: l, ph: "—" })}${u ? `<em>${u}</em>` : ""}</span></label>`).join("");
+  const en = val(k, `days.${dd}.energy`);
+  const energy = `<div class="hlf"><span class="cap">Energy</span><div class="chips" role="group" aria-label="Energy">${[1,2,3,4,5].map(n => `<button class="chipb" data-act="hlenergy" data-v="${n}" aria-pressed="${String(en)===String(n)}">${n}</button>`).join("")}</div><span class="hint" style="margin:2px 0 0">1 low · 5 great</span></div>`;
+  /* summary tiles as of today */
+  const w = hlLatest("w", td), w30 = hlLatest("w", addDays(td, -30), 30), sl7 = hlAvg(hlSeries("sleep", 7, td)), st7 = hlAvg(hlSeries("steps", 7, td)), rh7 = hlAvg(hlSeries("rhr", 7, td));
+  let bp = null; for(let i = 0; i < 60; i++){ const o = hlDay(addDays(td, -i)); if(hlHas(o, "sys") && hlHas(o, "dia")){ bp = { s: num(o.sys), d: num(o.dia), at: addDays(td, -i) }; break; } }
+  const ago = x => sameDay(x, td) ? "today" : sameDay(x, addDays(td, -1)) ? "yesterday" : `${MON3[x.getMonth()]} ${x.getDate()}`;
+  const tiles = [
+    `<div class="hcard"><span class="cap">Weight</span><div class="hv">${w ? fmtNum(w.v, 1) + " lb" : "—"}</div><div class="hs">${w ? "Logged " + ago(w.d) : "Not logged yet"}</div>${w && w30 && w30.d < w.d ? `<span class="dl">${w.v - w30.v > 0 ? "▲" : w.v - w30.v < 0 ? "▼" : "•"} ${fmtNum(Math.abs(w.v - w30.v), 1)} lb in ${Math.round((w.d - w30.d) / 864e5)} days</span>` : ""}${w && gW != null ? `<span class="dl">${fmtNum(Math.abs(w.v - gW), 1)} lb ${w.v > gW ? "above" : "below"} goal</span>` : ""}</div>`,
+    `<div class="hcard"><span class="cap">Sleep · 7-day average</span><div class="hv">${sl7 != null ? fmtNum(sl7, 1) + " h" : "—"}</div><div class="hs">Goal ${fmtNum(gS, 1)} h</div>${sl7 != null ? `<span class="dl">${sl7 >= gS ? "On target" : fmtNum(gS - sl7, 1) + " h short of goal"}</span>` : ""}</div>`,
+    `<div class="hcard"><span class="cap">Steps · 7-day average</span><div class="hv">${st7 != null ? fmtNum(st7) : "—"}</div><div class="hs">Goal ${fmtNum(gSt)}</div>${st7 != null ? `<span class="dl">${st7 >= gSt ? "On target" : fmtNum(gSt - st7) + " below goal"}</span>` : ""}</div>`,
+    `<div class="hcard"><span class="cap">Resting heart rate</span><div class="hv">${rh7 != null ? fmtNum(rh7) + " bpm" : "—"}</div><div class="hs">7-day average</div></div>`,
+    `<div class="hcard"><span class="cap">Blood pressure</span><div class="hv">${bp ? bp.s + "/" + bp.d : "—"}</div><div class="hs">${bp ? "mmHg · " + ago(bp.at) : "Not logged yet"}</div>${bp ? `<span class="dl bp-${bpLabel(bp.s, bp.d)[1]}">${bpLabel(bp.s, bp.d)[0]}</span>` : ""}</div>`,
+  ].join("");
+  /* charts */
+  const ch = [
+    ["Weight", "Last 90 days", trendChart(hlSeries("w", 90, td), { dec: 1, unit: "lb", goal: gW, label: "Weight, last 90 days" })],
+    ["Sleep", "Last 14 nights", barChart(hlSeries("sleep", 14, td), { dec: 1, unit: "h", goal: gS, label: "Sleep, last 14 nights" })],
+    ["Steps", "Last 14 days", barChart(hlSeries("steps", 14, td), { unit: "steps", goal: gSt, short: v => v >= 1000 ? fmtNum(v / 1000, v % 1000 ? 1 : 0) + "k" : fmtNum(v), label: "Steps, last 14 days" })],
+    ["Resting heart rate", "Last 30 days", trendChart(hlSeries("rhr", 30, td), { unit: "bpm", floor: 30, label: "Resting heart rate, last 30 days" })],
+    ["Blood pressure", "Last 30 days · lines at 120 and 80", bpChart(td)],
+    ["Water", "Last 14 days", barChart(hlSeries("water", 14, td), { unit: "oz", goal: gWa, label: "Water, last 14 days" })],
+  ].map(([t, sub, svg]) => `<section class="dc"><div class="dch"><h2>${t}</h2><span class="muted" style="font-size:12.5px">${sub}</span></div>${svg || `<div class="dempty">Log ${t.toLowerCase()} on a couple of days to see the trend here.</div>`}</section>`).join("");
+  /* medications + appointments */
+  const meds = (H0.meds || []).map((r, i) => `<tr><td>${I("health", `meds.${i}.name`, { ph: "Name", label: "Medication or supplement" })}</td><td>${I("health", `meds.${i}.dose`, { ph: "Dose", label: "Dose" })}</td><td>${I("health", `meds.${i}.when`, { ph: "When", label: "When to take" })}</td><td class="x"><button class="xb" data-act="del" data-k="health" data-p="meds" data-i="${i}" aria-label="Remove">×</button></td></tr>`).join("");
+  const appts = (H0.appts || []).map((r, i) => ({ r, i })).sort((a, b) => String(a.r && a.r.date || "9").localeCompare(String(b.r && b.r.date || "9")))
+    .map(({ r, i }) => `<tr class="${r && r.date && r.date < ymd(td) ? "past" : ""}"><td>${I("health", `appts.${i}.date`, { type: "date", label: "Date" })}</td><td>${I("health", `appts.${i}.time`, { type: "time", label: "Time" })}</td><td>${I("health", `appts.${i}.who`, { ph: "Doctor or place", label: "With" })}</td><td>${I("health", `appts.${i}.what`, { ph: "What for", label: "What for" })}</td><td class="x"><button class="xb" data-act="del" data-k="health" data-p="appts" data-i="${i}" aria-label="Remove">×</button></td></tr>`).join("");
+  return head("Health", `${DOWL[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}${isToday ? " · today" : ""}`, shiftNav("day") + (isToday ? "" : `<button class="pill" data-act="today">Today</button>`)) +
+  `<div class="sec">
+    <section class="hcheck"><div class="tbar" style="margin:0"><p class="lbl" style="margin:0">${isToday ? "Today's check-in" : "Check-in for " + MON3[d.getMonth()] + " " + d.getDate()}</p><span class="hint" style="margin:0">Saves as you type. Leave anything blank.</span></div>
+      <div class="hgrid">${fields}${energy}</div>
+      <label class="hlf"><span class="cap">Notes</span>${T(k, `days.${dd}.note`, { rows: 2, ph: "How you felt, symptoms, anything to remember", label: "Health notes" })}</label>
+    </section>
+    <div class="fhero hl5">${tiles}</div>
+    <div class="fcharts">${ch}</div>
+    <div class="bcols">
+      <div><div class="tbar"><p class="lbl" style="margin:0">Medications & supplements</p><button class="btn ghost" data-act="add" data-k="health" data-p="meds">Add</button></div>
+        ${meds ? `<div class="tblwrap"><table class="btbl"><thead><tr><th>Name</th><th>Dose</th><th>When</th><th class="x"></th></tr></thead><tbody>${meds}</tbody></table></div>` : `<div class="empty">Nothing listed yet.</div>`}</div>
+      <div><div class="tbar"><p class="lbl" style="margin:0">Appointments</p><button class="btn ghost" data-act="add" data-k="health" data-p="appts">Add</button></div>
+        ${appts ? `<div class="tblwrap"><table class="btbl appt"><thead><tr><th>Date</th><th>Time</th><th>With</th><th>What for</th><th class="x"></th></tr></thead><tbody>${appts}</tbody></table></div>` : `<div class="empty">No appointments yet. Upcoming ones also show on Home.</div>`}</div>
+    </div>
+    <section class="dc"><div class="dch"><h2>Targets</h2><span class="muted" style="font-size:12.5px">Used for the goal lines and tiles</span></div>
+      <div class="hgrid">${[["w","Goal weight","lb","decimal"],["sleep","Sleep","hours","decimal"],["steps","Steps","per day","numeric"],["water","Water","oz per day","numeric"]].map(([f,l,u,mode]) => `<label class="hlf"><span class="cap">${l}</span><span class="hlin">${I("health", `goals.${f}`, { mode, label: l, ph: f==="sleep" ? "8" : f==="steps" ? "8000" : f==="water" ? "64" : "—" })}<em>${u}</em></span></label>`).join("")}</div></section>
+    <p class="hint" style="margin:0">Google's health data can't be read by a web page today, so entries are typed in. Workouts still sync from Strava on the Fitness page.</p>
+  </div>`;
+}
+
 function vFamily(){
   const mon = weekStart(S.day), k = "fw"+ymd(mon), sun = addDays(mon,6), td = todayDate(), doc = get(k);
   const mem = get("family").members || [];
@@ -2283,7 +2437,7 @@ function vFamily(){
   </div></div>`;
 }
 
-const VIEWS = {home:vHome, family:vFamily, cover:vCover, year:vYear, month:vMonth, week:vWeek, day:vDay, goals:vGoals, budget:vBudget, fitness:vFitness, notes:vNotes};
+const VIEWS = {home:vHome, health:vHealth, family:vFamily, cover:vCover, year:vYear, month:vMonth, week:vWeek, day:vDay, goals:vGoals, budget:vBudget, fitness:vFitness, notes:vNotes};
 const MONTH_AWARE = ["month","goals","budget","fitness"];
 
 /* ---------- render ---------- */
@@ -2398,7 +2552,7 @@ document.getElementById("qadd").addEventListener("submit", e => {
 /* swipe left/right to change day, week or month */
 let sw0 = null;
 main.addEventListener("touchstart", e => {
-  if(e.touches.length!==1 || !["day","week","month","family"].includes(S.view)) { sw0 = null; return; }
+  if(e.touches.length!==1 || !["day","week","month","family","health"].includes(S.view)) { sw0 = null; return; }
   if(DR.src || e.target.closest("input, textarea, select, .tblwrap, .chips, .ph .nav, .blk-src, .tb, .btray-wrap, .tgrid")) { sw0 = null; return; }
   const t = e.touches[0]; sw0 = {x:t.clientX, y:t.clientY, t:Date.now()};
 }, {passive:true});
@@ -2731,6 +2885,7 @@ document.addEventListener("click", e => {
     if(!S.wkDelArm){ S.wkDelArm = true; document.getElementById("wk").innerHTML = wkSheet(); return; }
     const doc = clone(get(S.wk.k)); const rm = (doc.log || []).splice(S.wk.i, 1)[0]; put(S.wk.k, doc); closeMenu(); render(); if(rm) toast(`Deleted ${rm.notes || rm.type} from your log`);
   }
+  else if(a==="hlenergy"){ const k = hlKey(S.day), p = `days.${S.day.getDate()}.energy`; edit(k, p, String(val(k, p))===b.dataset.v ? "" : b.dataset.v); render(); }
   else if(a==="fbsignout"){ fbSignOut(); }
   else if(a==="fbimport"){ fbImport(true).then(n => toast(n ? `Copied ${n} items from the main version` : "Nothing new to copy from the main version")).catch(() => toast("Couldn't copy entries. Check your connection.")); }
   else if(a==="stconnect"){ stAuthorize(); }
