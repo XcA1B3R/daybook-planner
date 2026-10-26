@@ -2,6 +2,11 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v2.5 · 2026-10-26
+
+- **The Day page opens as a real two-page spread** on a tablet or computer: Schedule on the left page, Top 3, to-dos, meals, notes and stickers on the right, with rings down the middle. A **One page / Two pages** button next to the date lets you choose, and the planner remembers your choice. Without a choice, it shows two pages on wide screens and one page on phones.
+- The striped tape graphic is gone from every page.
+
 ## v2.4 · 2026-10-26
 
 - Removed the striped "tape" graphic that sat on top of the section tabs (for example Family, Goals & Habits and Notes). Pages without those tabs keep it.

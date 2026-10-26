@@ -273,9 +273,6 @@ main.page{min-width:0;padding:30px clamp(16px,3vw,38px) 40px;
 
 /* page furniture */
 .ph{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:22px;border-bottom:2px dotted var(--line)}
-.ph::before{content:"";position:absolute;top:-44px;left:-6px;width:118px;height:26px;transform:rotate(-4deg);opacity:.9;
-  background:repeating-linear-gradient(135deg, var(--sec) 0 9px, color-mix(in srgb, var(--sec) 55%, var(--paper)) 9px 18px);
-  -webkit-mask:linear-gradient(90deg,transparent 0,#000 4px calc(100% - 4px),transparent 100%);mask:linear-gradient(90deg,transparent 0,#000 4px calc(100% - 4px),transparent 100%)}
 .ph h1{margin:0;font:400 clamp(30px,3.6vw,44px)/1.02 var(--serif);letter-spacing:-.005em;text-wrap:balance}
 .ph .sub{color:var(--muted);font-size:13.5px;margin-top:6px;font-variant-numeric:tabular-nums}
 .ph .nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
@@ -412,7 +409,7 @@ textarea.ta:focus{outline:none;border-color:var(--accent)}
 .dbox.focus textarea.ta{background-color:var(--paper)}
 
 /* day */
-.dayg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:32px;align-items:start}
+.dayg{display:grid;gap:32px;align-items:start}
 .sched{display:grid;grid-template-columns:52px minmax(0,1fr);align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:6px 12px}
 .sched .t{font:500 12px var(--mono);color:var(--muted);border-bottom:1px solid var(--rule);padding:8px 0 7px}
 .sched .t.now{color:var(--accent);font-weight:700}
@@ -652,11 +649,15 @@ a.ev:hover{background:color-mix(in srgb, var(--ec, var(--accent)) 28%, var(--pap
 .glasses{display:flex;gap:6px;flex-wrap:wrap;padding:6px 0}
 .gl{width:30px;height:36px;border:2px solid var(--line);border-top-width:1px;border-radius:4px 4px 10px 10px;background:var(--paper);padding:0;position:relative;overflow:hidden}
 .gl.on{border-color:color-mix(in srgb, var(--t8) 60%, var(--ink));background:linear-gradient(transparent 25%, var(--t8) 25%)}
-@media (min-width:900px){
-  .dayg{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:60px;position:relative}
-  .dayg::before{content:"";position:absolute;top:-10px;bottom:-10px;left:50%;width:34px;margin-left:-17px;pointer-events:none;
-    background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 9%, transparent) 46%, color-mix(in srgb, var(--ink) 14%, transparent) 50%, color-mix(in srgb, var(--ink) 9%, transparent) 54%, transparent)}
-}
+.dayg.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;position:relative;align-items:stretch;margin:0 -6px}
+.dayg.two > .page-l,.dayg.two > .page-r{padding:22px 26px 26px;border:1px solid var(--line);background:var(--paper);min-width:0}
+.dayg.two > .page-l{border-radius:14px 2px 2px 14px;border-right:0;box-shadow:inset -26px 0 26px -22px color-mix(in srgb, var(--ink) 30%, transparent)}
+.dayg.two > .page-r{border-radius:2px 14px 14px 2px;border-left:0;box-shadow:inset 26px 0 26px -22px color-mix(in srgb, var(--ink) 30%, transparent)}
+.dayg.two::before{content:"";position:absolute;top:18px;bottom:18px;left:50%;width:18px;margin-left:-9px;z-index:2;pointer-events:none;
+  background:radial-gradient(circle at 50% 50%, var(--ring2) 0 3px, var(--ring1) 3.5px 6px, transparent 6.5px) 0 0/18px 44px repeat-y}
+.dayg.two::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--line);pointer-events:none}
+.dayg.one{grid-template-columns:minmax(0,1fr)}
+.daylay{white-space:nowrap}
 .dragghost{position:fixed;z-index:70;pointer-events:none;transform:translate(-50%,-70%) rotate(-3deg) scale(1.04);box-shadow:0 14px 28px -10px var(--shadow);width:auto!important;max-width:280px;margin:0}
 body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:none!important;cursor:grabbing!important}
 .pickhint{font-size:13px;color:var(--accent);font-weight:600;margin:8px 0 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -726,7 +727,7 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
   .coverg{grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:28px}
 }
 @media (max-width:860px){
-  .dayg,.notes,.coverg{grid-template-columns:minmax(0,1fr)}
+  .notes,.coverg{grid-template-columns:minmax(0,1fr)}
   .dc,.dc.s4,.dc.s5,.dc.s7,.dc.s8{grid-column:span 12}
   .coverbook{width:min(300px,100%);margin:0 auto}
 }
@@ -737,7 +738,6 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
   .book::before,.rings,.sidetabs{display:none}
   .ttab{padding:8px 13px;font-size:13.5px}
   main.page{padding:26px 14px 28px}
-  .ph::before{top:-24px;width:90px;height:20px}
   .dowh{display:none}
   .cal{grid-template-columns:minmax(0,1fr);border-left:0;background:transparent}
   .cell{border-right:0;min-height:0;flex-direction:row;align-items:flex-start;gap:8px;padding:6px 0}
@@ -782,7 +782,6 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
 }
 @media (max-width:420px){ .moregrid{grid-template-columns:repeat(2,minmax(0,1fr))} }
 .subnav{max-width:520px;margin:-8px 0 22px}
-.subnav + .ph::before{display:none}
 @media (max-width:720px){ .subnav{margin:-10px 0 18px} }
 /* Pen mode: bigger writing lines for a stylus with handwriting-to-text */
 .pen input.ln, .pen select.ln{font-size:18px;padding-block:12px;min-height:50px}
@@ -2126,6 +2125,9 @@ function vWeek(){
   `<div class="wkgrid">${boxes}<section class="dbox focus"><p class="lbl" style="margin:0">This week</p>${I(k,"focus",{ph:"Weekly focus",label:"Weekly focus"})}<div class="stack">${pri}</div>${T(k,"notes",{rows:2,ph:"Notes",label:"Week notes"})}</section></div>`;
 }
 
+const dayLayout = () => { const v = get("settings").dayLayout; return v === "two" || v === "one" ? v : (innerWidth >= 820 ? "two" : "one"); };
+let lastLay = null;
+addEventListener("resize", () => { if(S.view === "day" && !get("settings").dayLayout){ const l = dayLayout(); if(l !== lastLay) softRender(); } });
 function vDay(){
   const d = S.day, key = ymd(d), k = "d"+key, h = holOf(d), now = new Date(), st = (get(k).stk)||{};
   const evs = evOn(key), allDay = evs.filter(e => e.allDay), timed = evs.filter(e => !e.allDay);
@@ -2171,8 +2173,8 @@ function vDay(){
   const meals = `<div class="meals2">${[["b","Breakfast"],["l","Lunch"],["d","Dinner"],["s","Snacks"]].map(([f,l]) => `<label class="mrow"><span class="cap">${l}</span>${I(k, `meals.${f}`, { label: l })}</label>`).join("")}
     <div class="mrow"><span class="cap">Water</span><div class="glasses" role="group" aria-label="Glasses of water">${Array.from({length:8}, (_, i) => `<button class="gl${i < wg ? " on" : ""}" data-act="glass" data-n="${i+1}" aria-pressed="${i < wg}" aria-label="${i+1} glass${i ? "es" : ""}"></button>`).join("")}</div><span class="hint" style="margin:0">${wg} of 8 glasses · ${wg*8} oz</span></div></div>`;
   return head(`${DOWL[dowIdx(d)]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`,
-    `Day ${dayOfYear(d)} of ${yearLen(d.getFullYear())} · Week ${weekNo(d)}${h?` · <b style="color:var(--accent)">${esc(h)}</b>`:""}`, shiftNav("day")) +
-  `<div class="dayg">
+    `Day ${dayOfYear(d)} of ${yearLen(d.getFullYear())} · Week ${weekNo(d)}${h?` · <b style="color:var(--accent)">${esc(h)}</b>`:""}`, `<button class="pill daylay" data-act="daylay" aria-label="Switch to ${(lastLay = dayLayout()) === "two" ? "one page" : "two pages"}">${lastLay === "two" ? "One page" : "Two pages"}</button>` + shiftNav("day")) +
+  `<div class="dayg ${lastLay}">
     <div class="sec page-l"><div><p class="lbl">Schedule</p>${allDay.length?`<div class="evs" style="margin:0 0 10px">${allDay.map(e => evChip(e, true)).join("")}</div>`:""}${btray}<div class="tgrid${S.pickBlock?" picking":""}" id="tgrid">${sched}</div>${(() => { const early = blocks.filter(b => b.s < 360 || b.s + b.dur > 1320); return early.length ? `<div class="evs" style="margin-top:8px"><span class="cap">Outside 6a–10p</span>${early.map(b => blkSm(b, true)).join("")}</div>` : ""; })()}</div>
     </div>
     <div class="sec page-r">
@@ -3135,6 +3137,7 @@ document.addEventListener("click", e => {
   else if(a==="logorm"){ const doc = clone(get("settings")); delete doc.logo; put("settings", doc); applyBrand(); renderMenu(); if(S.view==="cover") render(); toast("Default logo restored"); }
   else if(a==="close"){ closeMenu(); }
   else if(a==="more"){ openSheet("more"); }
+  else if(a==="daylay"){ edit("settings","dayLayout", dayLayout() === "two" ? "one" : "two"); render(); }
   else if(a==="fittab"){ S.fitTab = b.dataset.t; render(); }
   else if(a==="qadd"){ openSheet("qadd"); }
   else if(a==="qtarget"){ S.qTarget = b.dataset.t; document.querySelectorAll('#qadd [data-act="qtarget"]').forEach(x => x.setAttribute("aria-pressed", String(x===b))); const pv = document.getElementById("q-prev"), qt = document.getElementById("q-text"); if(pv){ pv.hidden = S.qTarget !== "auto"; pv.innerHTML = qPreview(qt ? qt.value : ""); } if(qt){ qt.placeholder = S.qTarget==="auto" ? "gym tomorrow 6am · dentist Oct 30 2:30 · call Mike friday" : "Jot it down. One item per line."; qt.focus(); } }
