@@ -2,6 +2,14 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v2.2 · 2026-10-26
+
+- **Pen mode** for writing with a tablet stylus. It turns on by itself the first time your pen touches the planner, and you can switch it off in **Customize › Writing with a stylus**.
+  - Writing lines are taller, text is larger, and checkboxes are bigger.
+  - The schedule's notes column is wider, and hours are taller.
+  - Pen strokes no longer flip between days, weeks or months by accident. Finger swipes still do.
+- Handwriting turns into text using your tablet's built-in feature. Turn on **S Pen to text** (Samsung keyboard) or **Write in text fields** (Gboard), then write on any line. Steps are in Customize.
+
 ## v2.1 · 2026-10-24
 
 - **Google Calendar renews itself.** When the one-hour Google sign-in runs out, it renews the next time you tap anywhere in the planner. You may see a Google window flash for a moment, and there's no button to press. The last-known calendar stays on screen in the meantime. If Google can't renew automatically, an **Update calendar** button appears.

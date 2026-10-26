@@ -757,6 +757,22 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
   .moregrid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (max-width:420px){ .moregrid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+/* Pen mode: bigger writing lines for a stylus with handwriting-to-text */
+.pen input.ln, .pen select.ln{font-size:18px;padding-block:12px;min-height:50px}
+.pen textarea.ta{font-size:18px;line-height:40px;padding:0 12px;background:var(--paper) repeating-linear-gradient(transparent 0 39px, var(--rule) 39px 40px);background-attachment:local}
+.pen .cell textarea{font-size:15px;min-height:76px}
+.pen .row{gap:12px}
+.pen .ck{width:26px;height:26px}
+.pen .stack{gap:4px}
+.pen .tgrid{--hh:72px}
+.pen .trow .tnote{width:58%}
+.pen .trow .tnote input.ln{min-height:66px;padding-block:8px}
+.pen .lane{left:calc(46px + (100% - 46px) * .58)}
+.pen .lane-guide{left:calc(46px + (100% - 46px) * .58 - 4px)}
+.pen .hlin input.ln{font-size:22px}
+.pen .dbox textarea.ta{min-height:160px}
+.pen .fab{opacity:.85}
+@media (max-width:720px){ .pen .trow .tnote{width:50%} .pen .lane{left:calc(46px + (100% - 46px) * .5)} .pen .lane-guide{left:calc(46px + (100% - 46px) * .5 - 4px)} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -1762,6 +1778,14 @@ function renderMenu(){
         </details></div>` : ""}
       ${gOn() && G.cals.length ? `<div>${G.cals.map(c => `<label class="calrow"${c.color?` style="--ec:${c.color}"`:""}><i></i><span>${esc(c.name)}</span><input type="checkbox" class="ck" data-act="gcaltog" data-id="${esc(c.id)}"${gHidden().has(c.id)?"":" checked"} aria-label="Show ${esc(c.name)}"></label>`).join("")}</div>` : ""}
       <div class="gbtns">${gButtons()}${gOn() ? `<button class="btn ghost" data-act="gdisc">Disconnect</button>` : ""}</div></div>
+    <div><p class="lbl">Writing with a stylus</p><div class="seg" role="group" aria-label="Pen mode" style="grid-template-columns:1fr 1fr">
+        <button data-act="penmode" data-v="1" aria-pressed="${!!get("settings").penMode}">Pen mode on</button><button data-act="penmode" data-v="0" aria-pressed="${!get("settings").penMode}">Off</button></div>
+      <p class="hint">Pen mode makes writing lines bigger and stops pen strokes from flipping pages. Your tablet turns handwriting into text:</p>
+      <ul class="hint" style="margin:4px 0 0;padding-left:18px">
+        <li><b>Samsung keyboard:</b> Settings › Advanced features › S Pen › turn on <b>S Pen to text</b>.</li>
+        <li><b>Gboard:</b> Gboard settings › Handwriting › turn on <b>Write in text fields</b>.</li>
+      </ul>
+      <p class="hint">Then write straight onto any line in the planner. To fix a word, scratch it out or tap it.</p></div>
     <div><p class="lbl">Appearance</p><div class="seg" role="group" aria-label="Appearance">${MODES.map(([id,l]) => `<button data-act="mode" data-t="${id}" aria-pressed="${p.mode===id}">${l}</button>`).join("")}</div>
       <p class="hint">Auto switches between your light and dark styles with your device setting.</p></div>
     <div><p class="lbl">Light style</p><div class="opts">${sw(LIGHT_THEMES,"light",p.light)}</div></div>
@@ -2493,6 +2517,7 @@ function applySettings(){
   const want = dark ? "dark-"+p.dark : "theme-"+p.light;
   [...app.classList].forEach(c => { if((c.startsWith("theme-") || c.startsWith("dark-")) && c!==want) app.classList.remove(c); });
   app.classList.add(want);
+  app.classList.toggle("pen", !!get("settings").penMode);
   document.body.style.background = getComputedStyle(app).getPropertyValue("--desk").trim();
 }
 if(mq){ const f = () => applySettings(); mq.addEventListener ? mq.addEventListener("change", f) : mq.addListener(f); }
@@ -2549,12 +2574,19 @@ document.getElementById("qadd").addEventListener("submit", e => {
   if(quickAdd(t.value)){ closeMenu(); render(); } else t.focus();
 });
 
+/* first time a stylus touches the planner, switch on Pen mode (once; you can turn it off in Customize) */
+document.addEventListener("pointerdown", e => {
+  if(e.pointerType !== "pen") return;
+  const st0 = get("settings"); if(st0.penMode !== undefined) return;
+  edit("settings", "penMode", true); applySettings(); toast("Pen mode on for writing with your stylus. You can turn it off in Customize.");
+}, true);
+
 /* swipe left/right to change day, week or month */
 let sw0 = null;
 main.addEventListener("touchstart", e => {
   if(e.touches.length!==1 || !["day","week","month","family","health"].includes(S.view)) { sw0 = null; return; }
   if(DR.src || e.target.closest("input, textarea, select, .tblwrap, .chips, .ph .nav, .blk-src, .tb, .btray-wrap, .tgrid")) { sw0 = null; return; }
-  const t = e.touches[0]; sw0 = {x:t.clientX, y:t.clientY, t:Date.now()};
+  const t = e.touches[0]; if(t.touchType === "stylus"){ sw0 = null; return; } sw0 = {x:t.clientX, y:t.clientY, t:Date.now()};
 }, {passive:true});
 main.addEventListener("touchend", e => {
   if(!sw0) return; const t = e.changedTouches[0], dx = t.clientX - sw0.x, dy = t.clientY - sw0.y, dt = Date.now() - sw0.t; sw0 = null;
@@ -2878,6 +2910,7 @@ document.addEventListener("click", e => {
   else if(a==="month"){ const nm = +b.dataset.m; S.day = new Date(y, nm, Math.min(d, dim(y,nm))); render(); }
   else if(a==="stab"){ const nm = +b.dataset.m; S.day = new Date(y, nm, Math.min(d, dim(y,nm))); if(MONTH_AWARE.includes(S.view)) render(); else go("month"); }
   else if(a==="shift"){ shiftBy(+b.dataset.n); }
+  else if(a==="penmode"){ edit("settings","penMode", b.dataset.v==="1"); render(); renderMenu(); toast(b.dataset.v==="1" ? "Pen mode on" : "Pen mode off"); }
   else if(a==="menu"){ openMenu(); }
   else if(a==="wkopen"){ if(e.target.closest('[data-act="fitdel"]')) return; openWorkout(b.dataset.k, b.dataset.i, b); }
   else if(a==="wkday"){ const f = wkEntry(); if(f){ closeMenu(); S.day = parseYmd(f.date); go("day"); } }
