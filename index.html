@@ -649,14 +649,35 @@ a.ev:hover{background:color-mix(in srgb, var(--ec, var(--accent)) 28%, var(--pap
 .glasses{display:flex;gap:6px;flex-wrap:wrap;padding:6px 0}
 .gl{width:30px;height:36px;border:2px solid var(--line);border-top-width:1px;border-radius:4px 4px 10px 10px;background:var(--paper);padding:0;position:relative;overflow:hidden}
 .gl.on{border-color:color-mix(in srgb, var(--t8) 60%, var(--ink));background:linear-gradient(transparent 25%, var(--t8) 25%)}
-.dayg.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;position:relative;align-items:stretch;margin:0 -6px}
-.dayg.two > .page-l,.dayg.two > .page-r{padding:22px 26px 26px;border:1px solid var(--line);background:var(--paper);min-width:0}
-.dayg.two > .page-l{border-radius:14px 2px 2px 14px;border-right:0;box-shadow:inset -26px 0 26px -22px color-mix(in srgb, var(--ink) 30%, transparent)}
-.dayg.two > .page-r{border-radius:2px 14px 14px 2px;border-left:0;box-shadow:inset 26px 0 26px -22px color-mix(in srgb, var(--ink) 30%, transparent)}
-.dayg.two::before{content:"";position:absolute;top:18px;bottom:18px;left:50%;width:18px;margin-left:-9px;z-index:2;pointer-events:none;
+.spr.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;position:relative;align-items:stretch;margin:0 -6px}
+.spr.two > .page-l,.spr.two > .page-r{padding:22px 26px 26px;border:1px solid var(--line);background:var(--paper);min-width:0}
+.spr.two > .page-l{border-radius:14px 2px 2px 14px;border-right:0;box-shadow:inset -26px 0 26px -22px color-mix(in srgb, var(--ink) 30%, transparent)}
+.spr.two > .page-r{border-radius:2px 14px 14px 2px;border-left:0;box-shadow:inset 26px 0 26px -22px color-mix(in srgb, var(--ink) 30%, transparent)}
+.spr.two::before{content:"";position:absolute;top:18px;bottom:18px;left:50%;width:18px;margin-left:-9px;z-index:2;pointer-events:none;
   background:radial-gradient(circle at 50% 50%, var(--ring2) 0 3px, var(--ring1) 3.5px 6px, transparent 6.5px) 0 0/18px 44px repeat-y}
-.dayg.two::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--line);pointer-events:none}
+.spr.two::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--line);pointer-events:none}
 .dayg.one{grid-template-columns:minmax(0,1fr)}
+.dayg{position:relative}
+.pinlayer{position:absolute;inset:0;pointer-events:none;z-index:5}
+.pin{position:absolute;width:58px;height:58px;margin:-29px 0 0 -29px;padding:0;border:0;background:none;pointer-events:auto;cursor:grab;touch-action:none;transform:rotate(var(--r,0deg));transition:transform .12s}
+.pin svg,.skt svg,.skghost svg{width:100%;height:100%;display:block;overflow:visible}
+.pin:hover{transform:rotate(var(--r,0deg)) scale(1.06)}
+.pin.sel{outline:2px dashed var(--accent);outline-offset:3px;border-radius:12px}
+.pin.lifting{opacity:.25}
+.pinx{position:absolute;top:-12px;right:-12px;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font:700 16px/1 var(--body);box-shadow:0 2px 6px var(--shadow);cursor:pointer}
+.sksheet{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;padding:12px;border-radius:14px;border:1px dashed var(--line);background:color-mix(in srgb, var(--accent) 5%, var(--paper))}
+.skt{width:100%;aspect-ratio:1;padding:5px;border:0;background:none;border-radius:10px;cursor:grab;touch-action:none}
+.skt:hover{background:color-mix(in srgb, var(--accent) 10%, transparent)}
+.skghost{position:fixed;z-index:80;width:64px;height:64px;margin:-32px 0 0 -32px;pointer-events:none;transform:rotate(-6deg) scale(1.12);filter:drop-shadow(0 10px 14px rgba(0,0,0,.25));transition:opacity .12s}
+.skghost.peel{opacity:.45}
+.dayg.skover{outline:2px dashed color-mix(in srgb, var(--accent) 50%, transparent);outline-offset:6px;border-radius:16px}
+.pen .pin{width:66px;height:66px;margin:-33px 0 0 -33px}
+.spr.two > .page-l,.spr.two > .page-r{display:flex;flex-direction:column;gap:22px}
+.spr.two .wkgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.spr.two .goals{grid-template-columns:minmax(0,1fr)}
+.spr.two .famg{grid-template-columns:minmax(0,1fr)}
+.spr.two .notes{display:contents}
+.spr.two .habits{font-size:12px}
 .daylay{white-space:nowrap}
 .dragghost{position:fixed;z-index:70;pointer-events:none;transform:translate(-50%,-70%) rotate(-3deg) scale(1.04);box-shadow:0 14px 28px -10px var(--shadow);width:auto!important;max-width:280px;margin:0}
 body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:none!important;cursor:grabbing!important}
@@ -832,6 +853,7 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
   <div class="bsheet" id="qadd" role="dialog" aria-modal="true" aria-label="Quick add" hidden></div>
   <div class="bsheet" id="blk" role="dialog" aria-modal="true" aria-label="Edit activity" hidden></div>
   <div class="bsheet" id="wk" role="dialog" aria-modal="true" aria-label="Workout details" hidden></div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><filter id="skcut" x="-20%" y="-20%" width="140%" height="140%"><feMorphology in="SourceAlpha" operator="dilate" radius="2.6" result="d"/><feFlood flood-color="#fff"/><feComposite in2="d" operator="in" result="w"/><feDropShadow in="w" dx="0" dy="1.4" stdDeviation="1.3" flood-color="#000" flood-opacity=".28" result="ws"/><feMerge><feMergeNode in="ws"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg>
   <div class="bsheet" id="home" role="dialog" aria-modal="true" aria-label="Customize Home" hidden></div>
   <div class="toast" id="toast" role="status" hidden></div>
   <div id="tip" role="tooltip" hidden></div>
@@ -1036,7 +1058,7 @@ function migrateSched(){
 migrateSched();
 
 /* ---------- state ---------- */
-const S = { blkNew: null, fitTab: "overview", wk: null, wkDelArm: false, wkFrom: null, bkDays: null, bkScope: null, bkUntil: null, pickBlock: null, blkEdit: null, rzArm: false, rzKeep: true, rzText: "", day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "auto" };
+const S = { pinSel: null, blkNew: null, fitTab: "overview", wk: null, wkDelArm: false, wkFrom: null, bkDays: null, bkScope: null, bkUntil: null, pickBlock: null, blkEdit: null, rzArm: false, rzKeep: true, rzText: "", day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "auto" };
 
 /* ---------- Google Calendar ---------- */
 const GC = "Google Calendar";
@@ -1626,7 +1648,7 @@ function evChip(e, big){
   return e.link ? `<a class="${cls}"${style} href="${esc(e.link)}" target="_blank" rel="noopener" title="${esc(tipTxt)}">${inner}</a>` : `<div class="${cls}"${style} title="${esc(tipTxt)}">${inner}</div>`;
 }
 let rtimer = null;
-function softRender(){ clearTimeout(rtimer); rtimer = setTimeout(() => { if(editing() || (typeof DR!=="undefined" && DR.on)) dirty = true; else render(); }, 120); }
+function softRender(){ clearTimeout(rtimer); rtimer = setTimeout(() => { if(editing() || (typeof DR!=="undefined" && DR.on) || (typeof SK!=="undefined" && SK.on)) dirty = true; else render(); }, 120); }
 function toast(t){ const el = document.getElementById("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 2200); }
 try { const h = location.hash.slice(1); if(ALLVIEWS.includes(h)) S.view = h; else if(SECTIONS.some(x => x[0]===h)) S.view = resolveView(h); } catch(e) {}
 const Y = () => S.day.getFullYear(), M = () => S.day.getMonth();
@@ -2125,9 +2147,12 @@ function vWeek(){
   `<div class="wkgrid">${boxes}<section class="dbox focus"><p class="lbl" style="margin:0">This week</p>${I(k,"focus",{ph:"Weekly focus",label:"Weekly focus"})}<div class="stack">${pri}</div>${T(k,"notes",{rows:2,ph:"Notes",label:"Week notes"})}</section></div>`;
 }
 
-const dayLayout = () => { const v = get("settings").dayLayout; return v === "two" || v === "one" ? v : (innerWidth >= 820 ? "two" : "one"); };
+/* two-page spreads: on in landscape on tablet-size screens and up */
+const wideLand = () => innerWidth >= 820 && innerWidth > innerHeight;
+const dayLayout = () => { const v = get("settings").dayLayout; return v === "two" || v === "one" ? v : (wideLand() ? "two" : "one"); };
+const SPREAD_VIEWS = ["day","family","goals","notes"];
 let lastLay = null;
-addEventListener("resize", () => { if(S.view === "day" && !get("settings").dayLayout){ const l = dayLayout(); if(l !== lastLay) softRender(); } });
+addEventListener("resize", () => { if(!SPREAD_VIEWS.includes(S.view)) return; const l = S.view === "day" ? dayLayout() : (wideLand() ? "two" : "one"); if(l !== lastLay) softRender(); });
 function vDay(){
   const d = S.day, key = ymd(d), k = "d"+key, h = holOf(d), now = new Date(), st = (get(k).stk)||{};
   const evs = evOn(key), allDay = evs.filter(e => e.allDay), timed = evs.filter(e => !e.allDay);
@@ -2174,7 +2199,7 @@ function vDay(){
     <div class="mrow"><span class="cap">Water</span><div class="glasses" role="group" aria-label="Glasses of water">${Array.from({length:8}, (_, i) => `<button class="gl${i < wg ? " on" : ""}" data-act="glass" data-n="${i+1}" aria-pressed="${i < wg}" aria-label="${i+1} glass${i ? "es" : ""}"></button>`).join("")}</div><span class="hint" style="margin:0">${wg} of 8 glasses · ${wg*8} oz</span></div></div>`;
   return head(`${DOWL[dowIdx(d)]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`,
     `Day ${dayOfYear(d)} of ${yearLen(d.getFullYear())} · Week ${weekNo(d)}${h?` · <b style="color:var(--accent)">${esc(h)}</b>`:""}`, `<button class="pill daylay" data-act="daylay" aria-label="Switch to ${(lastLay = dayLayout()) === "two" ? "one page" : "two pages"}">${lastLay === "two" ? "One page" : "Two pages"}</button>` + shiftNav("day")) +
-  `<div class="dayg ${lastLay}">
+  `<div class="dayg spr ${lastLay}">
     <div class="sec page-l"><div><p class="lbl">Schedule</p>${allDay.length?`<div class="evs" style="margin:0 0 10px">${allDay.map(e => evChip(e, true)).join("")}</div>`:""}${btray}<div class="tgrid${S.pickBlock?" picking":""}" id="tgrid">${sched}</div>${(() => { const early = blocks.filter(b => b.s < 360 || b.s + b.dur > 1320); return early.length ? `<div class="evs" style="margin-top:8px"><span class="cap">Outside 6a–10p</span>${early.map(b => blkSm(b, true)).join("")}</div>` : ""; })()}</div>
     </div>
     <div class="sec page-r">
@@ -2183,8 +2208,10 @@ function vDay(){
       <div><p class="lbl">Meals & water</p>${meals}</div>
       <div><p class="lbl">Notes</p>${T(k,"notes",{rows:4,label:"Day notes"})}</div>
       <div><p class="lbl">Today's win</p>${I(k,"win",{ph:"One thing that went right",label:"Today's win"})}</div>
-      <div><p class="lbl">Stickers</p><div class="stray">${tray}</div><p class="muted" style="font-size:13px;margin:8px 0 0">They show up on the week and month pages too.</p></div>
-    </div></div>`;
+      <div><p class="lbl">Sticker sheet</p><div class="sksheet" role="group" aria-label="Sticker sheet">${DECALS.map(([id,l]) => `<button class="skt" data-skn="${id}" aria-label="${l} sticker" title="${l}">${decalSvg(id)}</button>`).join("")}</div>
+        <p class="muted" style="font-size:13px;margin:8px 0 0">Drag a sticker anywhere on the page, or tap one to add it. Drag it off the page to peel it off.</p></div>
+      <div><p class="lbl">Day tags</p><div class="stray">${tray}</div><p class="muted" style="font-size:13px;margin:8px 0 0">Tags show up on the week and month pages too.</p></div>
+    </div>${pinsLayer(k)}</div>`;
 }
 
 function vGoals(){
@@ -2209,6 +2236,11 @@ function vGoals(){
     tds += `<td class="hp" id="hp-${i}"></td>`;
     body += `<tr>${tds}</tr>`;
   }
+  if((lastLay = wideLand() ? "two" : "one") === "two") return head(`Goals & Habits`, `Six goals for ${y}, plus a habit tracker for each month`) +
+    `<div class="spr two"><div class="page-l"><div><p class="lbl">Yearly goals</p><div class="goals">${goals}</div></div></div>
+    <div class="page-r"><div><div class="tbar"><p class="lbl">Habit tracker · ${MONTHS[m]}</p>${monthChips()}</div>
+    <div class="tblwrap"><table class="habits"><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div>
+    <p class="muted" style="font-size:13px;margin:8px 0 0">Habit names carry over to the next month automatically. Scroll the tracker sideways to see the whole month.</p></div></div></div>`;
   return head(`Goals & Habits`, `Six goals for ${y}, plus a habit tracker for each month`) +
   `<div class="sec"><div><p class="lbl">Yearly goals</p><div class="goals">${goals}</div></div>
    <div><div class="tbar"><p class="lbl">Habit tracker · ${MONTHS[m]}</p>${monthChips()}</div>
@@ -2480,9 +2512,11 @@ function vNotes(){
       <button class="danger${S.delArm===k?" armed":""}" data-act="ndel">${S.delArm===k?"Tap again to delete":"Delete note"}</button></div>
       ${T(k,"body",{rows:18,label:"Note text"})}</div>`;
   }
-  return head(`Work Notes`, `Meetings, projects and brain dumps from ${y}, filed by date`,
+  return head(`Notes`, `Meetings, projects and brain dumps from ${y}, filed by date`,
     `<button class="btn" data-act="nnew" data-t="meeting">New meeting</button><button class="btn ghost" data-act="nnew" data-t="project">Project</button><button class="btn ghost" data-act="nnew" data-t="dump">Brain dump</button>`) +
-  `<div class="sec">${filt}<div class="notes"><div class="nlist">${items || `<p class="muted" style="margin:0;font-size:14px">Nothing filed yet.</p>`}</div>${editor}</div></div>`;
+  ((lastLay = wideLand() ? "two" : "one") === "two"
+    ? `<div class="spr two"><div class="page-l">${filt}<div class="nlist">${items || `<p class="muted" style="margin:0;font-size:14px">Nothing filed yet.</p>`}</div></div><div class="page-r">${editor}</div></div>`
+    : `<div class="sec">${filt}<div class="notes"><div class="nlist">${items || `<p class="muted" style="margin:0;font-size:14px">Nothing filed yet.</p>`}</div>${editor}</div></div>`);
 }
 
 /* ---------- Health (manual entries; doc "hl"+yyyy-mm holds days, doc "health" holds targets, medications, appointments) ---------- */
@@ -2625,6 +2659,16 @@ function vFamily(){
   const gl = groc.map((it,i) => ({it,i})).filter(({it}) => it && it.t);
   const grocRows = gl.length ? gl.sort((a,b) => (!!a.it.done - !!b.it.done)).map(({it,i}) => `<div class="row${it.done?" done":""}">${C("groc",`items.${i}.done`,it.t)}${I("groc",`items.${i}.t`,{label:"Grocery item"})}<button class="xb" data-act="grocdel" data-i="${i}" aria-label="Remove ${esc(it.t)}">×</button></div>`).join("") : `<p class="muted" style="margin:6px 0;font-size:13.5px">Your list is empty.</p>`;
   const members = mem.map((m,i) => `<div class="fm"><button class="swb" style="--c:${tc(m.c)}" data-act="famcolor" data-i="${i}" aria-label="Change color"></button>${I("family",`members.${i}.name`,{ph:"Name",label:"Family member name"})}<button class="xb" data-act="famrm" data-i="${i}" aria-label="Remove person">×</button></div>`).join("");
+  const famBox = `<section class="dbox focus"><p class="lbl" style="margin:0">Family</p>${members || `<p class="muted" style="margin:0;font-size:13.5px">Add the people you plan for. Each gets a color.</p>`}<button class="btn ghost" data-act="famadd" style="align-self:flex-start">Add person</button></section>`;
+  const mealsH = `<div><p class="lbl">Meal plan</p><div class="tblwrap"><table class="meals"><thead><tr><th>Day</th><th>Breakfast</th><th>Lunch</th><th>Dinner</th></tr></thead><tbody>${meals}</tbody></table></div></div>`;
+  const todoH = `<div><p class="lbl">This week's to-dos</p><div class="stack">${todo}</div></div>`;
+  const grocH = `<div class="panel groc">
+      <div class="tbar" style="margin:0"><p class="lbl" style="margin:0">Grocery list</p>${gl.some(x=>x.it.done)?`<button class="btn ghost" data-act="grocclear">Clear checked</button>`:""}</div>
+      <form class="fadd" id="grocform" autocomplete="off"><input class="ln" id="groc-t" placeholder="Add an item" aria-label="Add grocery item"><button type="submit" aria-label="Add">+</button></form>
+      <div class="stack">${grocRows}</div>
+    </div>`;
+  if((lastLay = wideLand() ? "two" : "one") === "two") return head(`Family`, `Week of ${range}`, shiftNav("week")) +
+    `<div class="spr two"><div class="page-l">${filt}<div class="wkgrid">${boxes}${famBox}</div></div><div class="page-r">${mealsH}${todoH}${grocH}</div></div>`;
   return head(`Family`, `Week of ${range}`, shiftNav("week")) +
   `<div class="sec">${filt}
   <div class="wkgrid">${boxes}
@@ -2771,7 +2815,7 @@ document.addEventListener("pointerdown", e => {
 let sw0 = null;
 main.addEventListener("touchstart", e => {
   if(e.touches.length!==1 || !["day","week","month","family","health"].includes(S.view)) { sw0 = null; return; }
-  if(DR.src || e.target.closest("input, textarea, select, .tblwrap, .chips, .ph .nav, .blk-src, .tb, .btray-wrap, .tgrid")) { sw0 = null; return; }
+  if(DR.src || SK.src || e.target.closest("input, textarea, select, .tblwrap, .chips, .ph .nav, .blk-src, .tb, .btray-wrap, .tgrid, .sksheet, .pin")) { sw0 = null; return; }
   const t = e.touches[0]; if(t.touchType === "stylus"){ sw0 = null; return; } sw0 = {x:t.clientX, y:t.clientY, t:Date.now()};
 }, {passive:true});
 main.addEventListener("touchend", e => {
@@ -2942,6 +2986,94 @@ function setRepeat(b, days, until){
 }
 
 /* ---------- activity blocks: drag to add, move and resize ---------- */
+/* ---------- decal stickers: drag onto the Day page (doc "d"+date .pins = [{id,s,x,y,r}], x/y are fractions of the page) ---------- */
+const DECALS = [
+  ["star","Star",'<path d="M32 6l7.6 16.2 17.4 2.1-12.8 12 3.4 17.3L32 45l-15.6 8.6 3.4-17.3L7 24.3l17.4-2.1z" fill="#F6C343"/><path d="M32 14l4.4 9.6" stroke="#FFF3C4" stroke-width="3" stroke-linecap="round" fill="none"/>'],
+  ["heart","Heart",'<path d="M32 54S8 40 8 23a12 12 0 0 1 24-4 12 12 0 0 1 24 4c0 17-24 31-24 31z" fill="#EF6F8A"/><path d="M16 22a6 6 0 0 1 6-6" stroke="#FFD1DC" stroke-width="3" stroke-linecap="round" fill="none"/>'],
+  ["sun","Sunshine",'<g stroke="#F59E0B" stroke-width="5" stroke-linecap="round"><path d="M32 6v7M32 51v7M6 32h7M51 32h7M13.6 13.6l5 5M45.4 45.4l5 5M13.6 50.4l5-5M45.4 18.6l5-5"/></g><circle cx="32" cy="32" r="13" fill="#FBBF24"/>'],
+  ["rainbow","Rainbow",'<g fill="none" stroke-width="6" stroke-linecap="round"><path d="M9 46a23 23 0 0 1 46 0" stroke="#EF4444"/><path d="M15.5 46a16.5 16.5 0 0 1 33 0" stroke="#F59E0B"/><path d="M22 46a10 10 0 0 1 20 0" stroke="#3B82F6"/></g><g fill="#E5E7EB"><circle cx="10" cy="48" r="6"/><circle cx="17" cy="49" r="5"/><circle cx="54" cy="48" r="6"/><circle cx="47" cy="49" r="5"/></g>'],
+  ["flower","Flower",'<g fill="#F9A8D4"><circle cx="32" cy="16" r="9"/><circle cx="46" cy="25" r="9"/><circle cx="41" cy="42" r="9"/><circle cx="23" cy="42" r="9"/><circle cx="18" cy="25" r="9"/></g><circle cx="32" cy="31" r="8" fill="#FACC15"/>'],
+  ["coffee","Coffee",'<path d="M13 25h30v13a12 12 0 0 1-12 12h-6a12 12 0 0 1-12-12z" fill="#A16207"/><path d="M43 29h3a6 6 0 0 1 0 12h-4" fill="none" stroke="#A16207" stroke-width="4"/><path d="M9 54h40" stroke="#78716C" stroke-width="4" stroke-linecap="round"/><path d="M21 9c-3 4 3 6 0 10M29 9c-3 4 3 6 0 10M37 9c-3 4 3 6 0 10" fill="none" stroke="#9CA3AF" stroke-width="3" stroke-linecap="round"/>'],
+  ["bolt","Energy",'<path d="M37 5L14 36h14l-4 23 25-33H35z" fill="#FACC15"/>'],
+  ["trophy","Trophy",'<path d="M20 9h24v13a12 12 0 0 1-24 0z" fill="#F59E0B"/><path d="M20 13h-6a7 7 0 0 0 7 11M44 13h6a7 7 0 0 1-7 11" fill="none" stroke="#F59E0B" stroke-width="4"/><rect x="29" y="33" width="6" height="10" fill="#D97706"/><rect x="19" y="43" width="26" height="9" rx="2" fill="#92400E"/>'],
+  ["dumbbell","Gym day",'<rect x="6" y="21" width="9" height="22" rx="2.5" fill="#475569"/><rect x="49" y="21" width="9" height="22" rx="2.5" fill="#475569"/><rect x="15" y="16" width="7" height="32" rx="2.5" fill="#64748B"/><rect x="42" y="16" width="7" height="32" rx="2.5" fill="#64748B"/><rect x="22" y="29" width="20" height="6" fill="#94A3B8"/>'],
+  ["bike","Ride",'<g fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="41" r="10" stroke="#0EA5E9"/><circle cx="48" cy="41" r="10" stroke="#0EA5E9"/><path d="M16 41l10-17h15l7 17M26 24l8 17H16M41 24l-3-7h-6" stroke="#F97316"/></g>'],
+  ["moon","Good night",'<path d="M38 7a25 25 0 1 0 19 39A21 21 0 0 1 38 7z" fill="#A78BFA"/><path d="M49 12l2 4.5 4.5 1-3.3 3 .9 4.5-4.1-2.3-4.1 2.3.9-4.5-3.3-3 4.5-1z" fill="#FDE68A"/>'],
+  ["smile","Happy",'<circle cx="32" cy="32" r="25" fill="#FCD34D"/><circle cx="23" cy="27" r="3.5" fill="#78350F"/><circle cx="41" cy="27" r="3.5" fill="#78350F"/><path d="M21 38c6 8 16 8 22 0" fill="none" stroke="#78350F" stroke-width="4" stroke-linecap="round"/>'],
+  ["done","Done",'<circle cx="32" cy="32" r="25" fill="#22C55E"/><path d="M20 33l8 8 16-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>'],
+  ["yay","Yay!",'<path d="M7 13a6 6 0 0 1 6-6h38a6 6 0 0 1 6 6v23a6 6 0 0 1-6 6H27L15 54V42h-2a6 6 0 0 1-6-6z" fill="#EC4899"/><text x="32" y="31.5" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="16" fill="#fff">Yay!</text>'],
+  ["water","Water",'<path d="M32 5C24 19 13 29 13 40a19 19 0 0 0 38 0c0-11-11-21-19-35z" fill="#38BDF8"/><path d="M22 41a10 10 0 0 0 9 9" stroke="#E0F2FE" stroke-width="3.5" stroke-linecap="round" fill="none"/>'],
+  ["plant","Grow",'<path d="M20 40h24l-3 16H23z" fill="#C2410C"/><path d="M32 40V22" stroke="#15803D" stroke-width="4" stroke-linecap="round"/><path d="M32 28c-12 0-16-8-16-16 10 0 16 6 16 16zM32 24c0-10 6-16 16-16 0 8-4 16-16 16z" fill="#22C55E"/>'],
+  ["pumpkin","Pumpkin",'<path d="M32 19c-14-6-26 4-26 18s12 22 26 18c14 4 26-4 26-18s-12-24-26-18z" fill="#F97316"/><path d="M32 19c-6 4-6 32 0 36M32 19c6 4 6 32 0 36" fill="none" stroke="#C2410C" stroke-width="2.5"/><path d="M32 20c0-6 2-10 6-13" fill="none" stroke="#65A30D" stroke-width="4" stroke-linecap="round"/>'],
+  ["gift","Gift",'<rect x="9" y="24" width="46" height="12" rx="2" fill="#DC2626"/><rect x="13" y="36" width="38" height="20" rx="2" fill="#EF4444"/><rect x="28" y="24" width="8" height="32" fill="#FDE68A"/><path d="M32 24c-6-10-16-10-14-3 1 3 8 3 14 3zM32 24c6-10 16-10 14-3-1 3-8 3-14 3z" fill="#FDE68A"/>'],
+];
+const DC = Object.fromEntries(DECALS.map(([id,l,a]) => [id, {l, a}]));
+const decalSvg = id => DC[id] ? `<svg viewBox="0 0 64 64" aria-hidden="true"><g filter="url(#skcut)">${DC[id].a}</g></svg>` : "";
+function pinsLayer(k){
+  const pins = (get(k).pins || []).filter(x => x && DC[x.s]);
+  return `<div class="pinlayer">${pins.map(x => `<button class="pin${S.pinSel===x.id ? " sel" : ""}" data-pin="${x.id}" style="left:${(x.x*100).toFixed(2)}%;top:${(x.y*100).toFixed(2)}%;--r:${x.r||0}deg" aria-label="${DC[x.s].l} sticker. Drag to move, or drag it off the page to peel it off.">${decalSvg(x.s)}${S.pinSel===x.id ? `<span class="pinx" data-act="pindel" data-id="${x.id}" role="button" aria-label="Peel off ${DC[x.s].l}">×</span>` : ""}</button>`).join("")}</div>`;
+}
+function savePins(k, fn){ const doc = clone(get(k)); doc.pins = fn((doc.pins || []).filter(Boolean)); if(!doc.pins.length) delete doc.pins; put(k, doc); }
+const SK = { src: null, on: false };
+function skPlace(sid, fx, fy){
+  const id = newId(); savePins(blockKey(), a => [...a, { id, s: sid, x: Math.max(0.02, Math.min(0.98, fx)), y: Math.max(0.005, Math.min(0.995, fy)), r: Math.round(Math.random()*20 - 10) }]);
+  S.pinSel = null; render(); return id;
+}
+function skTapPlace(sid){
+  const two = (document.querySelector(".dayg") || {}).classList?.contains("two");
+  skPlace(sid, two ? 0.62 + Math.random()*0.3 : 0.15 + Math.random()*0.7, 0.03 + Math.random()*0.12);
+  toast(`${DC[sid].l} sticker added. Drag it wherever you like.`);
+}
+document.addEventListener("pointerdown", e => {
+  if(S.view !== "day" || e.button > 0) return;
+  if(e.target.closest(".pinx")) return;
+  const t = e.target.closest("[data-skn], .pin"); if(!t) return;
+  SK.src = t; SK.id = e.pointerId; SK.x0 = e.clientX; SK.y0 = e.clientY; SK.on = false;
+  SK.kind = t.classList.contains("pin") ? "move" : "new"; SK.sid = SK.kind === "new" ? t.dataset.skn : ((get(blockKey()).pins || []).find(x => x && x.id === t.dataset.pin) || {}).s;
+  if(SK.kind === "move"){ const r = t.getBoundingClientRect(); SK.dx = e.clientX - (r.left + r.width/2); SK.dy = e.clientY - (r.top + r.height/2); } else { SK.dx = 0; SK.dy = 0; }
+}, true);
+document.addEventListener("pointermove", e => {
+  if(!SK.src || e.pointerId !== SK.id) return;
+  if(!SK.on){
+    if(Math.hypot(e.clientX - SK.x0, e.clientY - SK.y0) < 7) return;
+    SK.on = true; tip.hidden = true; document.body.classList.add("dragging");
+    const g = document.createElement("div"); g.className = "skghost"; g.innerHTML = decalSvg(SK.sid); document.body.appendChild(g); SK.ghost = g;
+    if(SK.kind === "move") SK.src.classList.add("lifting");
+  }
+  e.preventDefault();
+  SK.ghost.style.left = (e.clientX - SK.dx) + "px"; SK.ghost.style.top = (e.clientY - SK.dy) + "px";
+  const pg = document.querySelector(".dayg"); if(pg){ const r = pg.getBoundingClientRect(), inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; pg.classList.toggle("skover", inside); SK.ghost.classList.toggle("peel", !inside && SK.kind === "move"); }
+  const edge = 60; if(e.clientY > innerHeight - edge) scrollBy(0, 12); else if(e.clientY < edge) scrollBy(0, -12);
+}, { passive: false });
+function skEnd(e, ok){
+  const src = SK.src, kind = SK.kind, sid = SK.sid, was = SK.on; SK.src = null; SK.on = false;
+  document.body.classList.remove("dragging"); if(SK.ghost){ SK.ghost.remove(); SK.ghost = null; }
+  const pg = document.querySelector(".dayg"); if(pg) pg.classList.remove("skover");
+  if(!src || !sid) return;
+  if(!was){ // a tap
+    if(!ok) return;
+    if(kind === "new") skTapPlace(sid); else { S.pinSel = S.pinSel === src.dataset.pin ? null : src.dataset.pin; render(); const nb = document.querySelector(`.pin[data-pin="${src.dataset.pin}"]`); if(nb) nb.focus(); }
+    return;
+  }
+  if(!ok || !pg){ render(); return; }
+  const r = pg.getBoundingClientRect(), cx = e.clientX - SK.dx, cy = e.clientY - SK.dy, inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+  const fx = (cx - r.left) / r.width, fy = (cy - r.top) / r.height;
+  if(kind === "new"){ if(inside) skPlace(sid, fx, fy); return; }
+  const pid = src.dataset.pin;
+  if(inside){ savePins(blockKey(), a => a.map(x => x.id === pid ? { ...x, x: Math.max(0.02, Math.min(0.98, fx)), y: Math.max(0.005, Math.min(0.995, fy)) } : x)); S.pinSel = null; render(); }
+  else { savePins(blockKey(), a => a.filter(x => x.id !== pid)); S.pinSel = null; render(); toast(`${DC[sid].l} sticker peeled off`); }
+}
+document.addEventListener("pointerup", e => { if(SK.src && e.pointerId === SK.id) skEnd(e, true); });
+document.addEventListener("pointerdown", e => { if(S.pinSel && !e.target.closest(".pin")){ S.pinSel = null; const el = document.querySelector(".pin.sel"); if(el){ el.classList.remove("sel"); const x = el.querySelector(".pinx"); if(x) x.remove(); } } });
+document.addEventListener("pointercancel", e => { if(SK.src && e.pointerId === SK.id) skEnd(e, false); });
+document.addEventListener("click", e => { // keyboard: Enter/Space on a sheet sticker adds it
+  if(e.detail !== 0 || S.view !== "day") return; const t = e.target.closest && e.target.closest("[data-skn]"); if(t){ e.preventDefault(); skTapPlace(t.dataset.skn); }
+}, true);
+document.addEventListener("keydown", e => {
+  const t = e.target.closest && e.target.closest(".pin"); if(!t) return;
+  if(e.key === "Delete" || e.key === "Backspace"){ e.preventDefault(); const p0 = (get(blockKey()).pins || []).find(x => x && x.id === t.dataset.pin); savePins(blockKey(), a => a.filter(x => x.id !== t.dataset.pin)); S.pinSel = null; render(); if(p0) toast(`${DC[p0.s].l} sticker peeled off`); }
+  else if(e.key === "Enter" || e.key === " "){ e.preventDefault(); S.pinSel = S.pinSel === t.dataset.pin ? null : t.dataset.pin; render(); const nb = document.querySelector(`.pin[data-pin="${t.dataset.pin}"]`); if(nb) nb.focus(); }
+});
 const DR = { src:null, on:false };
 const SNAP = 15, G_START = 360;
 const snap = m => Math.round(m / SNAP) * SNAP;
@@ -3137,6 +3269,7 @@ document.addEventListener("click", e => {
   else if(a==="logorm"){ const doc = clone(get("settings")); delete doc.logo; put("settings", doc); applyBrand(); renderMenu(); if(S.view==="cover") render(); toast("Default logo restored"); }
   else if(a==="close"){ closeMenu(); }
   else if(a==="more"){ openSheet("more"); }
+  else if(a==="pindel"){ const p0 = (get(blockKey()).pins || []).find(x => x && x.id === b.dataset.id); savePins(blockKey(), arr => arr.filter(x => x.id !== b.dataset.id)); S.pinSel = null; render(); if(p0) toast(`${DC[p0.s].l} sticker peeled off`); }
   else if(a==="daylay"){ edit("settings","dayLayout", dayLayout() === "two" ? "one" : "two"); render(); }
   else if(a==="fittab"){ S.fitTab = b.dataset.t; render(); }
   else if(a==="qadd"){ openSheet("qadd"); }
@@ -3202,7 +3335,7 @@ document.addEventListener("click", e => {
 });
 
 /* read-only hook used by automated tests */
-try { Object.defineProperty(window, "__daybook", { value: Object.freeze({ blocksOn: k => blocksOf(k).map(b => ({ t: b.t, s: b.s, dur: b.dur, rec: !!b.rec })), goDay: d => { S.day = parseYmd(d); go("day"); } }) }); } catch(e) {}
+try { Object.defineProperty(window, "__daybook", { value: Object.freeze({ blocksOn: k => blocksOf(k).map(b => ({ t: b.t, s: b.s, dur: b.dur, rec: !!b.rec })), pinsOn: k => ((get("d" + k).pins) || []).map(x => ({ s: x.s, x: x.x, y: x.y })), goDay: d => { S.day = parseYmd(d); go("day"); } }) }); } catch(e) {}
 render();
 setStatus("Saved on this device");
 

@@ -2,6 +2,16 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v2.6 · 2026-10-26
+
+- **Drag-and-drop stickers on the Day page.** A sticker sheet with 18 stickers (star, heart, sunshine, rainbow, flower, coffee, energy, trophy, gym day, ride, good night, happy, done, Yay!, water, grow, pumpkin and gift).
+  - Drag one anywhere on the page, or tap it to add it near the top.
+  - Drag a placed sticker to move it. Drag it off the page to peel it off, or tap it and press ×.
+  - Each day keeps its own stickers, and they sync like everything else.
+  - The old label stickers are now called **Day tags** and still show on the week and month pages.
+- **Two-page spreads in landscape** for Family (days on the left; meals, to-dos and groceries on the right), Goals & Habits (goals on the left, habit tracker on the right) and Notes (list on the left, the open note on the right). Holding the tablet upright shows one page.
+- The Day page follows the same rule: two pages in landscape, one page upright, unless you've picked with the One page / Two pages button.
+
 ## v2.5 · 2026-10-26
 
 - **The Day page opens as a real two-page spread** on a tablet or computer: Schedule on the left page, Top 3, to-dos, meals, notes and stickers on the right, with rings down the middle. A **One page / Two pages** button next to the date lets you choose, and the planner remembers your choice. Without a choice, it shows two pages on wide screens and one page on phones.
