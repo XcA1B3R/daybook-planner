@@ -2,6 +2,10 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v2.4 · 2026-10-26
+
+- Removed the striped "tape" graphic that sat on top of the section tabs (for example Family, Goals & Habits and Notes). Pages without those tabs keep it.
+
 ## v2.3 · 2026-10-26
 
 - **Six sections instead of eleven tabs:** Home, Planner (Day, Week, Month, Year), Fitness, Health, Money and Life (Family, Goals & Habits, Notes). Each section remembers which page you were last on. On the phone, the bottom bar shows Home, Planner, Fitness, Health and More.
