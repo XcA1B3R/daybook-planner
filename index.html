@@ -194,6 +194,24 @@ button.ti.ta{border:0;border-left:3px solid #FC4C02;text-align:left;font:inherit
 .wkstats dt{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .wkstats dd{margin:2px 0 0;font:500 17px var(--mono);font-variant-numeric:tabular-nums}
 .wkdesc{margin:0;white-space:pre-wrap;font-size:14.5px;line-height:1.5;padding:10px 12px;border-left:3px solid var(--line)}
+.conns{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px;align-items:start}
+.cncard{display:flex;flex-direction:column;gap:10px;padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:var(--card,var(--paper));box-shadow:0 1px 2px rgb(0 0 0 / .04)}
+.cnhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cnhead h2{margin:0;font-size:18px;flex:1}
+.cnicon{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:800;color:#fff;background:var(--accent);font-size:15px}
+#cn-strava .cnicon{background:#fc5200}
+.cnicon svg{width:18px;height:18px}
+.cnstat{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);font-weight:600}
+.cnstat.ok{color:var(--good)} .cnstat.warn{color:var(--warn,#b7791f)}
+.lamp{width:9px;height:9px;border-radius:50%;background:var(--line);display:inline-block;flex-shrink:0}
+.lamp.ok{background:var(--good)} .lamp.warn{background:var(--warn,#d69e2e)}
+.connlink{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:inherit;cursor:pointer}
+.connlink b{display:block;font-size:14.5px} .connlink small{color:var(--muted);font-size:12.5px}
+.connlink > span:nth-child(2){flex:1}
+.connlink .lights{display:flex;gap:4px}
+.ststrip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--paper)}
+.ststrip .grow{flex:1}
+.btn.sm{padding:6px 12px;font-size:13px;min-height:34px}
 .stpanel{display:flex;flex-direction:column;gap:12px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--paper)}
 .sthead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .sthead b{font:400 20px var(--serif)}
@@ -278,6 +296,13 @@ textarea.ta:focus{outline:none;border-color:var(--accent)}
 .row{display:flex;align-items:center;gap:10px}
 .stack{display:flex;flex-direction:column;gap:2px}
 .chips{display:flex;gap:5px;flex-wrap:wrap}
+.qprev{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.qprev li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--paper);border:1px solid var(--line)}
+.qprev li > svg{width:20px;height:20px;flex-shrink:0;color:var(--accent)}
+.qprev li.q-appt > svg{color:var(--bad)}
+.qprev .qtx{display:flex;flex-direction:column;min-width:0}
+.qprev .qtx b{font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qprev .qtx span{font-size:12.5px;color:var(--muted)}
 .chipb{border:1px solid var(--line);border-radius:999px;padding:5px 11px;background:var(--paper);color:var(--muted);font-weight:600;font-size:13px}
 .chipb[aria-pressed="true"]{background:var(--sec);border-color:var(--sec);color:var(--tab-ink)}
 .btn{border:1px solid var(--accent);background:var(--accent);color:var(--paper);border-radius:999px;padding:8px 16px;font-weight:600;font-size:14px}
@@ -460,7 +485,15 @@ table{border-collapse:collapse;width:100%}
 
 /* home dashboard */
 .sec-home{--sec:var(--t6)}
-.dash{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+.dash{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:16px;align-items:start}
+.dash .dc{grid-column:auto}
+.dash .dc.wide{grid-column:span 2}
+@media (max-width:700px){ .dash .dc.wide{grid-column:auto} }
+.hlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.hlist li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--rule)}
+.hlist label{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
+.hlist span{display:flex;gap:6px}
+.hlist .iconb:disabled{opacity:.3}
 .dc{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px 18px;display:flex;flex-direction:column;gap:12px;min-width:0;grid-column:span 6}
 .dc.s4{grid-column:span 4} .dc.s5{grid-column:span 5} .dc.s7{grid-column:span 7} .dc.s8{grid-column:span 8} .dc.s12{grid-column:span 12}
 .dch{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
@@ -576,16 +609,13 @@ a.ev:hover{background:color-mix(in srgb, var(--ec, var(--accent)) 28%, var(--pap
 .blk.sm svg{width:14px;height:14px}
 .blk.sm b{font-size:11px}
 .blk.moving{opacity:.35}
-.tgrid{position:relative;--hh:56px;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tgrid{position:relative;--hh:60px;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .trow{display:grid;grid-template-columns:46px minmax(0,1fr);height:var(--hh);border-bottom:1px solid var(--rule);box-sizing:border-box}
 .trow:last-of-type{border-bottom:0}
 .trow:nth-of-type(even){background:color-mix(in srgb, var(--rule) 35%, transparent)}
 .trow .t{font:500 12px var(--mono);color:var(--muted);padding:6px 0 0 9px}
 .trow .t.now{color:var(--bad);font-weight:700}
-.trow .tnote{width:42%;min-width:0;padding-right:8px}
-.trow .tnote input.ln{border-bottom:0;padding:6px 2px;font-size:14px}
-.lane{position:absolute;top:0;bottom:0;left:calc(46px + (100% - 46px) * .42);right:6px;pointer-events:none}
-.lane-guide{position:absolute;top:0;bottom:0;left:calc(46px + (100% - 46px) * .42 - 4px);border-left:1px dashed var(--line);pointer-events:none}
+.lane{position:absolute;top:0;bottom:0;left:50px;right:8px;pointer-events:none}
 .ti{position:absolute;box-sizing:border-box;border-radius:8px;padding:3px 8px;overflow:hidden;font-size:13px;line-height:1.25;pointer-events:auto;min-height:14px}
 .ti .tl{display:flex;gap:6px;align-items:center;min-width:0;white-space:nowrap}
 .ti .tl svg{width:15px;height:15px;flex:none}
@@ -613,7 +643,20 @@ a.ev:hover{background:color-mix(in srgb, var(--ec, var(--accent)) 28%, var(--pap
 .tgrid.picking .trow{cursor:copy}
 .tgrid.picking .trow:hover{background:color-mix(in srgb, var(--accent) 10%, transparent)}
 .tgrid.picking .trow .t{color:var(--accent);font-weight:700}
-@media (max-width:720px){ .tgrid{--hh:60px} .trow .tnote{width:36%} .lane{left:calc(46px + (100% - 46px) * .36)} .lane-guide{left:calc(46px + (100% - 46px) * .36 - 4px)} }
+.trow{cursor:copy}
+.trow .tadd{align-self:center;font-size:13px;color:var(--muted);opacity:.7;padding-left:6px}
+.trow:hover{background:color-mix(in srgb, var(--accent) 6%, transparent)}
+.meals2{display:flex;flex-direction:column;gap:4px}
+.mrow{display:grid;grid-template-columns:7.5em minmax(0,1fr);align-items:center;gap:8px}
+.mrow .hint{grid-column:2}
+.glasses{display:flex;gap:6px;flex-wrap:wrap;padding:6px 0}
+.gl{width:30px;height:36px;border:2px solid var(--line);border-top-width:1px;border-radius:4px 4px 10px 10px;background:var(--paper);padding:0;position:relative;overflow:hidden}
+.gl.on{border-color:color-mix(in srgb, var(--t8) 60%, var(--ink));background:linear-gradient(transparent 25%, var(--t8) 25%)}
+@media (min-width:900px){
+  .dayg{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:60px;position:relative}
+  .dayg::before{content:"";position:absolute;top:-10px;bottom:-10px;left:50%;width:34px;margin-left:-17px;pointer-events:none;
+    background:linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 9%, transparent) 46%, color-mix(in srgb, var(--ink) 14%, transparent) 50%, color-mix(in srgb, var(--ink) 9%, transparent) 54%, transparent)}
+}
 .dragghost{position:fixed;z-index:70;pointer-events:none;transform:translate(-50%,-70%) rotate(-3deg) scale(1.04);box-shadow:0 14px 28px -10px var(--shadow);width:auto!important;max-width:280px;margin:0}
 body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:none!important;cursor:grabbing!important}
 .pickhint{font-size:13px;color:var(--accent);font-weight:600;margin:8px 0 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -738,6 +781,8 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
   .moregrid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (max-width:420px){ .moregrid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+.subnav{max-width:520px;margin:-8px 0 22px}
+@media (max-width:720px){ .subnav{margin:-10px 0 18px} }
 /* Pen mode: bigger writing lines for a stylus with handwriting-to-text */
 .pen input.ln, .pen select.ln{font-size:18px;padding-block:12px;min-height:50px}
 .pen textarea.ta{font-size:18px;line-height:40px;padding:0 12px;background:var(--paper) repeating-linear-gradient(transparent 0 39px, var(--rule) 39px 40px);background-attachment:local}
@@ -746,14 +791,9 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
 .pen .ck{width:26px;height:26px}
 .pen .stack{gap:4px}
 .pen .tgrid{--hh:72px}
-.pen .trow .tnote{width:58%}
-.pen .trow .tnote input.ln{min-height:66px;padding-block:8px}
-.pen .lane{left:calc(46px + (100% - 46px) * .58)}
-.pen .lane-guide{left:calc(46px + (100% - 46px) * .58 - 4px)}
 .pen .hlin input.ln{font-size:22px}
 .pen .dbox textarea.ta{min-height:160px}
 .pen .fab{opacity:.85}
-@media (max-width:720px){ .pen .trow .tnote{width:50%} .pen .lane{left:calc(46px + (100% - 46px) * .5)} .pen .lane-guide{left:calc(46px + (100% - 46px) * .5 - 4px)} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -780,9 +820,9 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
   </div>
   <nav class="bnav" id="bnav" aria-label="Main">
     <button data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
-    <button data-go="day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M9 15h6"/></svg>Day</button>
-    <button data-go="week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M9 5v15M15 5v15"/></svg>Week</button>
-    <button data-go="month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 4v17M13 4v17M3 14h18"/></svg>Month</button>
+    <button data-go="planner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M8 14h4M8 17h7"/></svg>Planner</button>
+    <button data-go="fitness"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l3.5-7h5.5l3 7M9.5 9l3.5 7M13.5 5.5h2.5"/></svg>Fitness</button>
+    <button data-go="health"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M8 12h2l1-2 2 4 1-2h2"/></svg>Health</button>
     <button data-act="more" id="bn-more"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>More</button>
   </nav>
   <button class="fab" data-act="qadd" aria-label="Quick add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -792,6 +832,7 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
   <div class="bsheet" id="qadd" role="dialog" aria-modal="true" aria-label="Quick add" hidden></div>
   <div class="bsheet" id="blk" role="dialog" aria-modal="true" aria-label="Edit activity" hidden></div>
   <div class="bsheet" id="wk" role="dialog" aria-modal="true" aria-label="Workout details" hidden></div>
+  <div class="bsheet" id="home" role="dialog" aria-modal="true" aria-label="Customize Home" hidden></div>
   <div class="toast" id="toast" role="status" hidden></div>
   <div id="tip" role="tooltip" hidden></div>
 </div>
@@ -803,7 +844,18 @@ const MONTHS = ["January","February","March","April","May","June","July","August
 const MON3 = MONTHS.map(m => m.slice(0,3));
 const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const DOWL = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-const TABS = [["home","Home",6],["year","Year",1],["month","Month",2],["week","Week",3],["day","Day",4],["goals","Goals & Habits",5],["budget","Budget",6],["fitness","Fitness",7],["family","Family",2],["health","Health",4],["notes","Work Notes",8]];
+const TABS = [["home","Home",6],["year","Year",1],["month","Month",2],["week","Week",3],["day","Day",4],["goals","Goals & Habits",5],["budget","Budget",6],["fitness","Fitness",7],["family","Family",2],["health","Health",4],["notes","Notes",8]];
+/* six sections in the tabs; Planner and Life have a switch inside the page */
+const SECTIONS = [["home","Home",1,["home"]],["planner","Planner",3,["day","week","month","year"]],["fitness","Fitness",7,["fitness"]],["health","Health",4,["health"]],["money","Money",6,["budget"]],["life","Life",2,["family","goals","notes"]]];
+const SUBLABEL = { day:"Day", week:"Week", month:"Month", year:"Year", family:"Family", goals:"Goals & Habits", notes:"Notes" };
+const ALLVIEWS = ["cover","connections", ...TABS.map(t => t[0])];
+const sectionOf = v => (SECTIONS.find(x => x[3].includes(v)) || [v])[0];
+const lastSub = (() => { try { return JSON.parse(localStorage.getItem("daybook-lastsub") || "{}") || {}; } catch(e){ return {}; } })();
+function resolveView(v){ const sec = SECTIONS.find(x => x[0] === v); if(!sec) return v; return sec[3].includes(lastSub[v]) ? lastSub[v] : sec[3][0]; }
+function subnav(v){
+  const sec = SECTIONS.find(x => x[3].includes(v)); if(!sec || sec[3].length < 2) return "";
+  return `<div class="subnav seg" role="tablist" aria-label="${sec[1]}" style="grid-template-columns:repeat(${sec[3].length},1fr)">${sec[3].map(x => `<button role="tab" data-go="${x}" aria-pressed="${x===v}" aria-selected="${x===v}">${SUBLABEL[x]}</button>`).join("")}</div>`;
+}
 const MONTH_COLORS = [1,2,3,4,5,6,7,8,1,2,3,4];
 const EXP_CATS = ["Housing","Utilities","Groceries","Dining out","Gas & auto","Insurance","Phone & internet","Debt payments","Health","Subscriptions","Personal","Gifts","Savings","Other"];
 const FIT_TYPES = ["Ride","Run","Walk","Strength","Swim","Hike","Kayak","Mobility","Other"];
@@ -823,8 +875,10 @@ const BLOCKS = [
   ["swim","Swim",6,60,'<path d="M2.5 17c2 0 2 1.4 4.75 1.4S9.5 17 12 17s2.25 1.4 4.75 1.4S19.5 17 21.5 17"/><circle cx="16.5" cy="7" r="2"/><path d="M5.5 13.5l4.5-4.5 3.5 3.5"/>'],
   ["sauna","Sauna",2,30,'<path d="M8 3.5c-1.6 1.8 1.6 3 0 5M12 3.5c-1.6 1.8 1.6 3 0 5M16 3.5c-1.6 1.8 1.6 3 0 5"/><rect x="3.5" y="12" width="17" height="8" rx="2"/>'],
   ["walk","Walk",1,30,'<circle cx="13" cy="4.5" r="1.8"/><path d="M10.5 21l2-6.5-2.5-3 1.2-4 3.3 3.2 3 .8M8.5 11.5l-1.8 3.8M12 8l-3 1.2"/>'],
+  ["custom","Custom",3,60,'<path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 7.5l3 3"/>'],
   ["ride","Ride",7,90,'<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l3.5-7h5.5l3 7M9.5 9l3.5 7M13.5 5.5h2.5"/>'],
 ];
+BLOCKS.push(BLOCKS.splice(BLOCKS.findIndex(x => x[0]==="custom"), 1)[0]);
 const BT = Object.fromEntries(BLOCKS.map(([id,l,c,dur,ic]) => [id, {l, c, dur, ic}]));
 const bIcon = t => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${BT[t].ic}</svg>`;
 const fmtMin = m => { m = Math.max(0, Math.round(m)); const h = Math.floor(m/60)%24, mm = m%60; return `${h%12||12}${mm?":"+pad(mm):""}${h<12?"a":"p"}`; };
@@ -834,7 +888,7 @@ const recSeries = () => ((store.get("rec")||{}).series||[]).filter(x => x && BT[
 function occurrencesOn(key){
   const dow = parseYmd(key).getDay();
   return recSeries().filter(x => x.start <= key && (!x.until || key <= x.until) && (x.days||[]).includes(dow) && !(x.skip||[]).includes(key))
-    .map(x => { const o = (x.ov||{})[key] || {}; return { id: `r:${x.id}:${key}`, t: o.t || x.t, s: o.s ?? x.s, dur: o.dur ?? x.dur, note: o.note ?? x.note, rec: x.id, date: key, days: x.days, until: x.until || "" }; });
+    .map(x => { const o = (x.ov||{})[key] || {}; return { id: `r:${x.id}:${key}`, t: o.t || x.t, s: o.s ?? x.s, dur: o.dur ?? x.dur, note: o.note ?? x.note, title: o.title ?? x.title, rec: x.id, date: key, days: x.days, until: x.until || "" }; });
 }
 const blocksOf = key => [...((store.get("d"+key)||{}).blocks||[]).filter(b => b && BT[b.t]), ...occurrencesOn(key)].sort((a,b) => a.s - b.s);
 const DAYS1 = ["S","M","T","W","T","F","S"];
@@ -847,7 +901,8 @@ function repeatLabel(days){
   if(d.length===1) return "Every " + ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d[0]];
   return d.map(i => ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][i]).join(", ");
 }
-const blkSm = (b, withEnd) => `<div class="blk sm" style="--c:${tc(BT[b.t].c)}">${bIcon(b.t)}<b>${fmtMin(b.s)}${withEnd?"–"+fmtMin(b.s+b.dur):""}</b><span>${BT[b.t].l}${b.rec?" ↻":""}</span>${b.note?`<em>${esc(b.note)}</em>`:""}</div>`;
+const blkName = b => (b.title && String(b.title).trim()) || (b.t === "custom" ? "New item" : BT[b.t].l);
+const blkSm = (b, withEnd) => `<div class="blk sm" style="--c:${tc(BT[b.t].c)}">${bIcon(b.t)}<b>${fmtMin(b.s)}${withEnd?"–"+fmtMin(b.s+b.dur):""}</b><span>${esc(blkName(b))}${b.rec?" ↻":""}</span>${b.note?`<em>${esc(b.note)}</em>`:""}</div>`;
 const LIGHT_THEMES = [["sage","Sage"],["blush","Blush"],["ocean","Ocean"],["linen","Linen"]];
 const DARK_THEMES = [["midnight","Midnight"],["charcoal","Charcoal"],["forest","Forest"],["plum","Plum"]];
 const MODES = [["auto","Auto"],["light","Light"],["dark","Dark"]];
@@ -969,9 +1024,19 @@ function migrateWeeks(){
   return moved;
 }
 migrateWeeks();
+function migrateSched(){
+  [...store.keys()].forEach(k => {
+    if(!/^d\d{4}-\d{2}-\d{2}$/.test(k)) return;
+    const doc0 = store.get(k); if(!doc0 || !doc0.sched) return;
+    const doc = clone(doc0); doc.blocks = (doc.blocks || []).filter(Boolean);
+    Object.entries(doc.sched).forEach(([hr, txt]) => { if(txt != null && String(txt).trim()) doc.blocks.push({ id: newId(), t: "custom", title: String(txt).trim(), s: (+hr) * 60, dur: 60 }); });
+    delete doc.sched; put(k, doc);
+  });
+}
+migrateSched();
 
 /* ---------- state ---------- */
-const S = { wk: null, wkDelArm: false, wkFrom: null, bkDays: null, bkScope: null, bkUntil: null, pickBlock: null, blkEdit: null, rzArm: false, rzKeep: true, rzText: "", day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "today" };
+const S = { blkNew: null, fitTab: "overview", wk: null, wkDelArm: false, wkFrom: null, bkDays: null, bkScope: null, bkUntil: null, pickBlock: null, blkEdit: null, rzArm: false, rzKeep: true, rzText: "", day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "auto" };
 
 /* ---------- Google Calendar ---------- */
 const GC = "Google Calendar";
@@ -1199,7 +1264,7 @@ function ensureTc(cid){
 }
 async function dAuth(consent){
   const cid = (get("settings").gClientId || "").trim();
-  if(!cid){ G.state = "setup"; paintG(); openMenu(); return; }
+  if(!cid){ G.state = "setup"; paintG(); go("connections"); return; }
   try { await loadGIS(); } catch(e){ G.state = "error"; G.msg = "Couldn't reach Google sign-in. Check your internet connection and try again."; paintG(); softRender(); return; }
   ensureTc(cid); G.silent = false;
   G.tc.requestAccessToken({ prompt: consent ? "consent" : "" });
@@ -1311,8 +1376,8 @@ function stErrText(e){
 async function stHandleReturn(){
   const q = new URLSearchParams(location.search), state = q.get("state") || "";
   if(!state.startsWith("strava-")) return false;
-  try { history.replaceState(null, "", location.pathname + "#fitness"); } catch(e) {}
-  S.view = "fitness";
+  try { history.replaceState(null, "", location.pathname + "#connections"); } catch(e) {}
+  S.view = "connections";
   if(q.get("error")){ stSay("Strava connection was cancelled.", true); return true; }
   if(state !== "strava-" + ST.cfg.oauthState){ stSay("That Strava sign-in didn't match this device. Tap Connect Strava to try again.", true); return true; }
   const scope = q.get("scope") || "";
@@ -1380,8 +1445,8 @@ function stDisconnect(){
   stSay("Strava disconnected. Workouts already imported stay in your log.");
 }
 function stAutoSync(){ if(G.mode === "direct" && stConnected() && Date.now() - (ST.cfg.lastSync || 0) > 30*60*1000) stSync(false); }
-function stPanel(){
-  if(G.mode !== "direct") return `<div class="stpanel"><div class="sthead"><span class="sticon" aria-hidden="true">S</span><b>Strava</b></div><p class="hint" style="margin:0">Strava sync works on your GitHub site: <span class="copyme">https://xca1b3r.github.io/daybook-planner/</span></p></div>`;
+function stPanel(bare){
+  if(G.mode !== "direct") return `<p class="hint" style="margin:0">Strava sync works on your GitHub site: <span class="copyme">https://xca1b3r.github.io/daybook-planner/</span></p>`;
   const last = ST.cfg.lastSync ? new Date(ST.cfg.lastSync) : null;
   const status = stConnected() ? `Connected${ST.cfg.athlete ? " as " + esc(ST.cfg.athlete) : ""}${last ? ` · synced ${sameDay(last, todayDate()) ? fmtTime(last) : MON3[last.getMonth()] + " " + last.getDate()}` : ""}` : stHasKeys() ? "Ready to connect" : "Not set up";
   let body;
@@ -1403,7 +1468,67 @@ function stPanel(){
         <p class="hint">Your keys and Strava sign-in are saved only in this browser. They are never added to your GitHub repo. Set this up on each device you use.</p>
       </details>`;
   }
-  return `<div class="stpanel"><div class="sthead"><span class="sticon" aria-hidden="true">S</span><b>Strava</b><span class="muted" style="font-size:13px">${status}</span></div>${body}${ST.msg ? `<p class="hint${ST.err ? " err" : ""}" role="status" style="margin:0">${esc(ST.msg)}</p>` : ""}</div>`;
+  const msg = ST.msg ? `<p class="hint${ST.err ? " err" : ""}" role="status" style="margin:0">${esc(ST.msg)}</p>` : "";
+  if(bare) return `${stConnected() ? `<p class="hint" style="margin:0">${status}. New workouts come in automatically every 30 minutes while the planner is open.</p>` : ""}${body}${msg}`;
+  return `<div class="stpanel"><div class="sthead"><span class="sticon" aria-hidden="true">S</span><b>Strava</b><span class="muted" style="font-size:13px">${status}</span></div>${body}${msg}</div>`;
+}
+
+/* ---------- connections ---------- */
+function gLight(){
+  if(G.state==="unavailable" || G.state==="blocked") return { cls:"off", t: G.state==="blocked" ? "Not allowed here" : "Not available here" };
+  if(!gOn() || G.state==="off" || G.state==="setup") return { cls:"off", t: G.state==="setup" ? "Not set up" : "Not connected" };
+  if(G.state==="ok") return { cls:"ok", t: G.updated ? `Synced ${fmtTime(new Date(G.updated))}` : "Connected" };
+  if(G.state==="loading" || G.state==="checking") return { cls:"", t:"Loading…" };
+  if(G.state==="needs_tap" && G.updated && !G.msg && !G.renewFailed) return { cls:"ok", t:`Synced ${fmtTime(new Date(G.updated))} · renews on your next tap` };
+  return { cls:"warn", t: (gStatusText() || {t:"Needs attention"}).t };
+}
+function stLight(){
+  if(G.mode !== "direct") return { cls:"off", t:"Works on your GitHub site" };
+  if(stConnected()) return ST.err ? { cls:"warn", t:"Sync problem" } : { cls:"ok", t: ST.cfg.lastSync ? `Synced ${sameDay(new Date(ST.cfg.lastSync), todayDate()) ? fmtTime(new Date(ST.cfg.lastSync)) : MON3[new Date(ST.cfg.lastSync).getMonth()] + " " + new Date(ST.cfg.lastSync).getDate()}` : "Connected" };
+  return { cls:"off", t: stHasKeys() ? "Ready to connect" : "Not set up" };
+}
+function penLight(){ return get("settings").penMode ? { cls:"ok", t:"On" } : { cls:"off", t:"Off" }; }
+function connLights(){ return [{name:"Google Calendar", ...gLight()}, {name:"Strava", ...stLight()}, {name:"Pen mode", ...penLight()}]; }
+const connHead = (icon, name, l) => `<div class="cnhead"><span class="cnicon" aria-hidden="true">${icon}</span><h2>${name}</h2><span class="cnstat ${l.cls}"><i class="lamp ${l.cls}"></i>${esc(l.t)}</span></div>`;
+function vConnections(){
+  return head("Connections", "Your calendar, workouts and stylus, all in one place") + `<div class="conns">
+    <section class="cncard" id="cn-google">${connHead("G", "Google Calendar", gLight())}
+      
+      <p class="hint" style="margin:0 0 4px;font-size:13.5px;color:var(--ink)">${esc(gOn() ? gHelp() : (G.state==="unavailable"||G.state==="blocked"||G.state==="setup") ? gHelp() : "Sign in with Google to see your calendar events on your day, week, month and Home pages.")}</p>
+      ${G.mode === "direct" ? `<div class="gsetup">
+        <label class="cap" for="${fid("settings","gClientId")}">Google sign-in ID (OAuth client ID)</label>
+        ${I("settings","gClientId",{ph:"1234567890-abc123.apps.googleusercontent.com",label:"Google OAuth client ID"})}
+        <details${(get("settings").gClientId||"").trim() ? "" : " open"}><summary>How to get one (about 10 minutes, free)</summary>
+          <ol class="steps">
+            <li>Go to <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a> and create a project, for example "Daybook".</li>
+            <li>Open <a href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com" target="_blank" rel="noopener">Google Calendar API</a> and click <b>Enable</b>.</li>
+            <li>Open <a href="https://console.cloud.google.com/auth/overview" target="_blank" rel="noopener">Google Auth Platform</a> and click <b>Get started</b>. Give the app a name, choose <b>External</b>, and add your Gmail address as a <b>test user</b> under Audience.</li>
+            <li>Under <b>Clients</b>, click <b>Create client</b>, choose <b>Web application</b>, and under <b>Authorized JavaScript origins</b> add <code class="copyme">${esc(location.origin && location.origin !== "null" ? location.origin : "https://xca1b3r.github.io")}</code></li>
+            <li>Copy the <b>Client ID</b> into the box above, then tap <b>Sign in with Google</b>.</li>
+          </ol>
+          <p class="hint">Google will warn that the app isn't verified. That's expected for your own app. Choose Continue.</p>
+        </details></div>` : ""}
+      ${gOn() && G.cals.length ? `<div>${G.cals.map(c => `<label class="calrow"${c.color?` style="--ec:${c.color}"`:""}><i></i><span>${esc(c.name)}</span><input type="checkbox" class="ck" data-act="gcaltog" data-id="${esc(c.id)}"${gHidden().has(c.id)?"":" checked"} aria-label="Show ${esc(c.name)}"></label>`).join("")}</div>` : ""}
+      <div class="gbtns">${gButtons()}${gOn() ? `<button class="btn ghost" data-act="gdisc">Disconnect</button>` : ""}</div>
+    </section>
+    <section class="cncard" id="cn-strava">${connHead("S", "Strava", stLight())}${stPanel(true)}</section>
+    <section class="cncard" id="cn-pen">${connHead("✎", "Pen mode", penLight())}
+      <div class="seg" role="group" aria-label="Pen mode" style="grid-template-columns:1fr 1fr">
+        <button data-act="penmode" data-v="1" aria-pressed="${!!get("settings").penMode}">Pen mode on</button><button data-act="penmode" data-v="0" aria-pressed="${!get("settings").penMode}">Off</button></div>
+      <p class="hint">Pen mode makes writing lines bigger and stops pen strokes from flipping pages. Your tablet turns handwriting into text:</p>
+      <ul class="hint" style="margin:4px 0 0;padding-left:18px">
+        <li><b>Samsung keyboard:</b> Settings › Advanced features › S Pen › turn on <b>S Pen to text</b>.</li>
+        <li><b>Gboard:</b> Gboard settings › Handwriting › turn on <b>Write in text fields</b>.</li>
+      </ul>
+      <p class="hint">Then write straight onto any line in the planner. To fix a word, scratch it out or tap it.</p>
+    </section>
+    ${typeof FB_ACCOUNT === "function" ? FB_ACCOUNT() : ""}
+  </div>`;
+}
+function stStrip(){
+  const l = stLight();
+  const act = G.mode === "direct" && stConnected() ? `<button class="btn ghost sm" data-act="stsync"${ST.busy ? " disabled" : ""}>${ST.busy ? "Syncing…" : "Sync now"}</button>` : "";
+  return `<div class="ststrip"><span class="sticon" aria-hidden="true">S</span><b>Strava</b><span class="cnstat ${l.cls}"><i class="lamp ${l.cls}"></i>${esc(ST.msg && (ST.err || ST.busy || Date.now() - (ST.cfg.lastSync || 0) < 60000) ? ST.msg : l.t)}</span><span class="grow"></span>${act}<button class="btn ghost sm" data-go="connections">${stConnected() ? "Manage" : "Set up"}</button></div>`;
 }
 
 function startDirect(){
@@ -1441,7 +1566,7 @@ function gHelp(){
     case "approval": return "The planner needs your OK to read Google Calendar. Tap Allow and confirm when Claude asks.";
     case "blocked": return "Your organization doesn't allow Google Calendar here.";
     case "unavailable": return "Open the planner in the Claude app or on claude.ai while signed in to use Google Calendar.";
-    case "setup": return "Add your Google sign-in ID in Customize › Google Calendar to connect your calendar.";
+    case "setup": return S.view === "connections" ? "Paste your Google sign-in ID below, then tap Sign in with Google. It takes about 10 minutes to set up the first time." : "Add your Google sign-in ID on the Connections page to connect your calendar.";
     case "needs_tap": return G.msg || (G.renewFailed ? `Showing your calendar as of ${G.updated ? fmtTime(new Date(G.updated)) : "the last update"}. Google didn't renew automatically, so tap Update calendar.` : G.updated ? `Showing your calendar as of ${fmtTime(new Date(G.updated))}. It refreshes the next time you tap anywhere in the planner.` : "Tap Sign in with Google to load your calendar.");
     case "error": return G.msg;
     case "loading": case "checking": return "Loading your events…";
@@ -1453,7 +1578,7 @@ function gButtons(){
   const st = G.state;
   if(st==="unavailable" || st==="blocked") return "";
   if(G.mode === "direct"){
-    if(st==="setup") return `<button class="btn" data-act="menu">Set up Google sign-in</button>`;
+    if(st==="setup") return S.view === "connections" ? `<button class="btn" data-act="gconnect">Sign in with Google</button>` : `<button class="btn" data-go="connections">Set up Google sign-in</button>`;
     if(!gOn() || st==="off") return `<button class="btn" data-act="gconnect">Sign in with Google</button>`;
     if(st==="needs_tap") return `<button class="btn" data-act="gconnect">${G.updated ? "Update calendar" : "Sign in with Google"}</button>`;
     if(st==="error") return `<button class="btn ghost" data-act="grefresh">Try again</button>`;
@@ -1473,6 +1598,7 @@ function paintG(){
   if(el){ if(s){ el.hidden = false; el.textContent = s.t; el.className = "gstat " + s.cls; } else el.hidden = true; }
   const a = document.activeElement;
   if(S.menu && !(a && a.matches && a.matches("#drawer input[type=text], #drawer input:not([type])"))) renderMenu();
+  if(S.view === "connections") softRender();
 }
 let gStarting = false;
 async function gStart(){
@@ -1502,7 +1628,7 @@ function evChip(e, big){
 let rtimer = null;
 function softRender(){ clearTimeout(rtimer); rtimer = setTimeout(() => { if(editing() || (typeof DR!=="undefined" && DR.on)) dirty = true; else render(); }, 120); }
 function toast(t){ const el = document.getElementById("toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 2200); }
-try { const h = location.hash.slice(1); if(h==="cover" || TABS.some(t => t[0]===h)) S.view = h; } catch(e) {}
+try { const h = location.hash.slice(1); if(ALLVIEWS.includes(h)) S.view = h; else if(SECTIONS.some(x => x[0]===h)) S.view = resolveView(h); } catch(e) {}
 const Y = () => S.day.getFullYear(), M = () => S.day.getMonth();
 
 /* ---------- field helpers ---------- */
@@ -1528,7 +1654,7 @@ const shiftNav = label => `<button class="iconb" data-act="shift" data-n="-1" ar
 function vCover(){
   const s = get("settings"), y = Y(), cover = s.cover || "garden";
   const title = (s.title || "").trim() || "My Planner";
-  const idx = TABS.map(([v,l,c],i) => `<button data-go="${v}" style="--c:${tc(c)}"><i></i>${l}<span class="dots"></span><span class="pg">${pad(i+1)}</span></button>`).join("");
+  const idx = [...SECTIONS.map(x => [x[0], x[1], x[2]]), ["connections","Connections",8]].map(([v,l,c],i) => `<button data-go="${v}" style="--c:${tc(c)}"><i></i>${l}<span class="dots"></span><span class="pg">${pad(i+1)}</span></button>`).join("");
   return `<div class="coverg">
     <div class="coverbook cv-${cover}"><div class="clabel">${s.logo ? `<img class="clogo" src="${esc(s.logo)}" alt="">` : ""}<div class="ct" id="covtitle">${esc(title)}</div><div class="cy">${y}</div><div class="cs">Daybook planner</div></div></div>
     <div class="sec">
@@ -1582,8 +1708,21 @@ function line(vals, labels, opts={}){
   vals.forEach((v,i) => { if(v!=null) g += `<rect class="hit" x="${X(i)-slot/2}" y="${T}" width="${slot}" height="${ih}" data-tip="${esc(opts.tip(i,v))}"/>`; });
   return `<svg class="ch" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label||"Chart")}">${g}</svg>`;
 }
-const card = (cls, title, color, link, body) => `<section class="dc ${cls}" style="--c:${tc(color)}"><div class="dch"><h2>${title}</h2>${link?`<button data-go="${link[0]}">${link[1]} ›</button>`:""}</div>${body}</section>`;
+const card = (cls, title, color, link, body) => `<section class="dc ${cls || ""}" style="--c:${tc(color)}"><div class="dch"><h2>${title}</h2>${link?`<button data-go="${link[0]}">${link[1]} ›</button>`:""}</div>${body}</section>`;
 const dempty = (text, view, label) => `<div class="dempty">${text} <button data-go="${view}">${label}</button></div>`;
+
+const HOME_CARDS = [["upnext","Up next"],["today","Today"],["fitweek","Fitness this week"],["health","Health"],["comingup","Coming up"],["budget","Budget"],
+  ["year","Year progress"],["family","Family"],["goals","Goals"],["habits","Habits"],["debt","Debt payoff"],["workouts","Workout minutes by month"],["mix","Workout mix"],["notes","Notes"]];
+const HOME_DEFAULT = ["upnext","today","fitweek","health","comingup","budget"];
+const homeCards = () => { const v = get("settings").homeCards; return Array.isArray(v) ? v.filter(id => HOME_CARDS.some(c => c[0]===id)) : HOME_DEFAULT; };
+function homeEditor(){
+  const on = homeCards(), off = HOME_CARDS.map(c => c[0]).filter(id => !on.includes(id)), nm = id => HOME_CARDS.find(c => c[0]===id)[1];
+  return `<div class="grab"></div><header><h2>Customize Home</h2><button class="iconb" data-act="close" aria-label="Close">×</button></header>
+    <p class="hint" style="margin:0">Choose which cards show on Home and the order they appear in.</p>
+    <ol class="hlist">${on.map((id, i) => `<li><label><input type="checkbox" class="ck" data-act="hometog" data-id="${id}" checked> ${nm(id)}</label><span><button class="iconb" data-act="homemove" data-id="${id}" data-d="-1" aria-label="Move ${nm(id)} up"${i===0?" disabled":""}>↑</button><button class="iconb" data-act="homemove" data-id="${id}" data-d="1" aria-label="Move ${nm(id)} down"${i===on.length-1?" disabled":""}>↓</button></span></li>`).join("")}</ol>
+    ${off.length ? `<p class="cap" style="margin:6px 0 0">More cards</p><ul class="hlist">${off.map(id => `<li><label><input type="checkbox" class="ck" data-act="hometog" data-id="${id}"> ${nm(id)}</label></li>`).join("")}</ul>` : ""}
+    <div class="gbtns" style="margin:0"><button class="btn ghost" data-act="homereset">Back to the default six</button><button class="btn" data-act="close">Done</button></div>`;
+}
 
 function vHome(){
   const y = Y(), td = todayDate(), isThisYear = td.getFullYear()===y;
@@ -1698,26 +1837,32 @@ function vHome(){
     : dempty("Plan the family's week, meals and groceries in one place.", "family", "Open Family");
 
   const who = (name.match(/^(.+?)['\u2019]s\b/) || [])[1] || "";
-  return head(`${hello}${who && !/^my$/i.test(who) ? ", "+esc(who.trim()) : ""}`, `${DOWL[dowIdx(td)]}, ${MONTHS[td.getMonth()]} ${td.getDate()}, ${td.getFullYear()}${isThisYear?"":` · showing ${y}`}`) +
-  `<div class="dash">
-    ${card("s4","Up next",8,["day","Open day"],nextBody)}
-    ${card("s4","Today",4,["day","Plan today"],todayBody)}
-    ${card("s4","Year progress",1,["year","Year view"],yearBody)}
-    ${card("s6","Family",2,["family","Family"],famBody)}
-    ${card("s6","Coming up",3,null,upBody)}
-    ${card("s6","Goals",5,["goals","All goals"],goalsBody)}
-    ${card("s6",`Habits · ${MONTHS[m]}`,5,["goals","Tracker"],habBody)}
-    ${card("s7",`Budget · ${MONTHS[m]}`,6,["budget","Budget"],budBody)}
-    ${card("s5","Debt payoff",2,["budget","Update"],debtBody)}
-    ${card("s8","Workout minutes by month",7,["fitness","Fitness log"],fitBody)}
-    ${card("s4",`Workout mix · ${MON3[m]}`,7,null,mixBody)}
-    ${card("s6","Health",4,["health","Health"],(() => {
+  const healthBody = (() => {
       const w = hlLatest("w", td), sl = hlLatest("sleep", td, 2), stp = hlDay(td).steps, any = w || sl || hlHas(hlDay(td), "steps");
       return any ? `<div class="kpis"><div class="kpi"><span class="cap">Weight</span><div class="v">${w ? fmtNum(w.v,1) + " lb" : "—"}</div></div><div class="kpi"><span class="cap">Last sleep</span><div class="v">${sl ? fmtNum(sl.v,1) + " h" : "—"}</div></div><div class="kpi"><span class="cap">Steps today</span><div class="v">${hlHas(hlDay(td), "steps") ? fmtNum(num(stp)) : "—"}</div></div></div>${hlSeries("w", 30, td).filter(p => p.v != null).length >= 2 ? trendChart(hlSeries("w", 30, td), { dec: 1, unit: "lb", label: "Weight, last 30 days" }) : ""}`
         : dempty("Track weight, sleep, steps, blood pressure and more.", "health", "Do today's check-in");
-    })())}
-    ${card("s6","Work notes",8,["notes","All notes"],notesBody)}
-  </div>`;
+    })();
+  /* this week's fitness */
+  const fby = fitDaily([td.getFullYear(), addDays(td, -7).getFullYear()]), fws = weekStart(td), ftw = sumRange(fby, fws, td), flw = sumRange(fby, addDays(fws, -7), addDays(fws, -1)), fgoal = num(get("settings").fitGoalHrs) || 5;
+  const fitWeekBody = `<div class="ringwrap">${ring(ftw.mins/60/fgoal, Math.round(ftw.mins/60/fgoal*100) + "%", "OF GOAL")}<div class="stack" style="gap:6px"><div><span class="cap">This week</span><div class="big">${fmtHrs(ftw.mins)}</div></div><div class="muted" style="font-size:13px">${fmtNum(ftw.mi,1)} mi · ${ftw.n} workout${ftw.n===1?"":"s"}</div>${deltaTxt(ftw.mins/60, flw.mins/60, "h", v => fmtNum(v,1))}</div></div>`;
+  const CARDS = {
+    upnext: () => card("", "Up next", 8, ["day","Open day"], nextBody),
+    today: () => card("", "Today", 4, ["day","Plan today"], todayBody),
+    fitweek: () => card("", "Fitness this week", 7, ["fitness","Fitness"], fitWeekBody),
+    health: () => card("", "Health", 4, ["health","Health"], healthBody),
+    comingup: () => card("", "Coming up", 3, null, upBody),
+    budget: () => card("wide", `Budget · ${MONTHS[m]}`, 6, ["budget","Budget"], budBody),
+    year: () => card("", "Year progress", 1, ["year","Year view"], yearBody),
+    family: () => card("", "Family", 2, ["family","Family"], famBody),
+    goals: () => card("", "Goals", 5, ["goals","All goals"], goalsBody),
+    habits: () => card("", `Habits · ${MONTHS[m]}`, 5, ["goals","Tracker"], habBody),
+    debt: () => card("", "Debt payoff", 2, ["budget","Update"], debtBody),
+    workouts: () => card("wide", "Workout minutes by month", 7, ["fitness","Fitness"], fitBody),
+    mix: () => card("", `Workout mix · ${MON3[m]}`, 7, null, mixBody),
+    notes: () => card("", "Notes", 8, ["notes","All notes"], notesBody),
+  };
+  return head(`${hello}${who && !/^my$/i.test(who) ? ", "+esc(who.trim()) : ""}`, `${DOWL[dowIdx(td)]}, ${MONTHS[td.getMonth()]} ${td.getDate()}, ${td.getFullYear()}${isThisYear?"":` · showing ${y}`}`, `<button class="pill" data-act="homeedit">Customize Home</button>`) +
+  `<div class="dash">${homeCards().map(id => CARDS[id] ? CARDS[id]() : "").join("")}</div>`;
 }
 
 /* ---------- customize menu ---------- */
@@ -1735,31 +1880,7 @@ function renderMenu(){
   const sw = (list, kind, cur) => list.map(([id,l]) => `<button class="sw" data-act="${kind}" data-t="${id}" aria-pressed="${cur===id}"><span class="swc ${kind==="light"?"theme-":"dark-"}${id}" style="background:var(--paper)"><b style="background:var(--t1)"></b><b style="background:var(--t2)"></b><b style="background:var(--t4)"></b><b style="background:var(--accent)"></b></span>${l}</button>`).join("");
   document.getElementById("drawer").innerHTML = `
     <header><h2>Customize</h2><button class="iconb" data-act="close" aria-label="Close">×</button></header>
-    <div><p class="lbl">Google Calendar</p>
-      <p class="hint" style="margin:0 0 4px;font-size:13.5px;color:var(--ink)">${esc(gOn() ? gHelp() : (G.state==="unavailable"||G.state==="blocked"||G.state==="setup") ? gHelp() : "Sign in with Google to see your calendar events on your day, week, month and Home pages.")}</p>
-      ${G.mode === "direct" ? `<div class="gsetup">
-        <label class="cap" for="${fid("settings","gClientId")}">Google sign-in ID (OAuth client ID)</label>
-        ${I("settings","gClientId",{ph:"1234567890-abc123.apps.googleusercontent.com",label:"Google OAuth client ID"})}
-        <details${(get("settings").gClientId||"").trim() ? "" : " open"}><summary>How to get one (about 10 minutes, free)</summary>
-          <ol class="steps">
-            <li>Go to <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">console.cloud.google.com</a> and create a project, for example "Daybook".</li>
-            <li>Open <a href="https://console.cloud.google.com/apis/library/calendar-json.googleapis.com" target="_blank" rel="noopener">Google Calendar API</a> and click <b>Enable</b>.</li>
-            <li>Open <a href="https://console.cloud.google.com/auth/overview" target="_blank" rel="noopener">Google Auth Platform</a> and click <b>Get started</b>. Give the app a name, choose <b>External</b>, and add your Gmail address as a <b>test user</b> under Audience.</li>
-            <li>Under <b>Clients</b>, click <b>Create client</b>, choose <b>Web application</b>, and under <b>Authorized JavaScript origins</b> add <code class="copyme">${esc(location.origin && location.origin !== "null" ? location.origin : "https://xca1b3r.github.io")}</code></li>
-            <li>Copy the <b>Client ID</b> into the box above, then tap <b>Sign in with Google</b>.</li>
-          </ol>
-          <p class="hint">Google will warn that the app isn't verified. That's expected for your own app. Choose Continue.</p>
-        </details></div>` : ""}
-      ${gOn() && G.cals.length ? `<div>${G.cals.map(c => `<label class="calrow"${c.color?` style="--ec:${c.color}"`:""}><i></i><span>${esc(c.name)}</span><input type="checkbox" class="ck" data-act="gcaltog" data-id="${esc(c.id)}"${gHidden().has(c.id)?"":" checked"} aria-label="Show ${esc(c.name)}"></label>`).join("")}</div>` : ""}
-      <div class="gbtns">${gButtons()}${gOn() ? `<button class="btn ghost" data-act="gdisc">Disconnect</button>` : ""}</div></div>
-    <div><p class="lbl">Writing with a stylus</p><div class="seg" role="group" aria-label="Pen mode" style="grid-template-columns:1fr 1fr">
-        <button data-act="penmode" data-v="1" aria-pressed="${!!get("settings").penMode}">Pen mode on</button><button data-act="penmode" data-v="0" aria-pressed="${!get("settings").penMode}">Off</button></div>
-      <p class="hint">Pen mode makes writing lines bigger and stops pen strokes from flipping pages. Your tablet turns handwriting into text:</p>
-      <ul class="hint" style="margin:4px 0 0;padding-left:18px">
-        <li><b>Samsung keyboard:</b> Settings › Advanced features › S Pen › turn on <b>S Pen to text</b>.</li>
-        <li><b>Gboard:</b> Gboard settings › Handwriting › turn on <b>Write in text fields</b>.</li>
-      </ul>
-      <p class="hint">Then write straight onto any line in the planner. To fix a word, scratch it out or tap it.</p></div>
+    <div><p class="lbl">Connections</p><button class="connlink" data-go="connections"><span class="lights">${connLights().map(l => `<i class="lamp ${l.cls}" title="${esc(l.name)}: ${esc(l.t)}"></i>`).join("")}</span><span><b>Google Calendar, Strava &amp; pen</b><small>Sign-ins, syncing and stylus writing</small></span><span aria-hidden="true">›</span></button></div>
     <div><p class="lbl">Appearance</p><div class="seg" role="group" aria-label="Appearance">${MODES.map(([id,l]) => `<button data-act="mode" data-t="${id}" aria-pressed="${p.mode===id}">${l}</button>`).join("")}</div>
       <p class="hint">Auto switches between your light and dark styles with your device setting.</p></div>
     <div><p class="lbl">Light style</p><div class="opts">${sw(LIGHT_THEMES,"light",p.light)}</div></div>
@@ -1789,9 +1910,10 @@ function resetAll(){
   closeMenu(); go("home"); paintG(); toast("Planner reset. Everything is cleared.");
 }
 function openMenu(){ closeSheets(); S.menu = true; renderMenu(); document.getElementById("drawer").hidden = false; document.getElementById("scrim").hidden = false; const c = document.querySelector('#drawer [data-act="close"]'); if(c) c.focus(); }
-function closeSheets(){ S.sheet = null; ["more","qadd","blk","wk"].forEach(id => document.getElementById(id).hidden = true); }
+function closeSheets(){ S.sheet = null; ["more","qadd","blk","wk","home"].forEach(id => document.getElementById(id).hidden = true); }
 function closeMenu(){
   const was = S.sheet;
+  if(S.blkNew){ const nb = findBlock(S.blkNew); const tEl = document.getElementById("bk-title"); if(nb && nb.t === "custom" && !nb.title && !(tEl && tEl.value.trim())) removeBlock(nb); S.blkNew = null; setTimeout(render, 0); }
   S.menu = false; closeSheets(); document.getElementById("drawer").hidden = true; document.getElementById("scrim").hidden = true;
   const b = was==="wk" ? S.wkFrom : was==="more" ? document.getElementById("bn-more") : was==="qadd" ? document.querySelector(".fab") : was==="blk" ? null : document.querySelector('.topbar .cbtn'); if(b) b.focus();
 }
@@ -1799,6 +1921,7 @@ function openSheet(id){
   S.menu = false; document.getElementById("drawer").hidden = true; closeSheets(); S.sheet = id;
   const el = document.getElementById(id);
   if(id==="wk"){ el.innerHTML = wkSheet(); }
+  else if(id==="home"){ el.innerHTML = homeEditor(); }
   else if(id==="blk"){
     const b = findBlock(S.blkEdit); if(!b) return;
     if(S.bkDays === null) S.bkDays = [...(b.days||[])];
@@ -1811,6 +1934,7 @@ function openSheet(id){
     el.innerHTML = `<div class="grab"></div><header><div class="bkhead"><span class="blk-src" style="--c:${tc(BT[b.t].c)}">${bIcon(b.t)}${BT[b.t].l}</span><span class="muted" style="font-size:14px">${fmtMin(b.s)}–${fmtMin(b.s+b.dur)}</span></div><button class="iconb" data-act="close" aria-label="Close">×</button></header>
       <form id="blkform" class="sec" style="gap:14px" autocomplete="off">
         <div class="bkgrid">
+          <label class="bkfull" style="grid-column:1 / -1"><span class="cap">Title</span><input class="ln" id="bk-title" value="${esc(b.title||"")}" placeholder="${b.t==="custom" ? "What is it? Write or type" : esc(BT[b.t].l)}" autocomplete="off"></label>
           <label><span class="cap">Activity</span><select class="ln" id="bk-t">${BLOCKS.map(([id,l]) => `<option value="${id}"${id===b.t?" selected":""}>${l}</option>`).join("")}</select></label>
           <label><span class="cap">Starts</span><select class="ln" id="bk-s">${starts.map(m => `<option value="${m}"${m===b.s?" selected":""}>${fmtMin(m)}</option>`).join("")}</select></label>
           <label><span class="cap">Length</span><select class="ln" id="bk-d">${durs.map(d => `<option value="${d}"${d===b.dur?" selected":""}>${durTxt(d)}</option>`).join("")}</select></label>
@@ -1835,26 +1959,100 @@ function openSheet(id){
   } else if(id==="more"){
     const icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/></svg>';
     el.innerHTML = `<div class="grab"></div><header><h2>Sections</h2><button class="iconb" data-act="close" aria-label="Close">×</button></header>
-      <div class="moregrid">${[["cover","Cover",2],...TABS].map(([v,l,c]) => `<button data-go="${v}" style="--c:${tc(c)}"${S.view===v?' aria-current="page"':""}>${icon}${l}</button>`).join("")}</div>
-      <button class="btn ghost" data-act="menu" style="align-self:center">Customize and Google Calendar</button>`;
+      <div class="moregrid">${[["budget","Money",6],["family","Family",2],["goals","Goals & Habits",5],["notes","Notes",8],["day","Day",3],["week","Week",3],["month","Month",3],["year","Year",3],["connections","Connections",8],["cover","Cover",2]].map(([v,l,c]) => `<button data-go="${v}" style="--c:${tc(c)}"${S.view===v?' aria-current="page"':""}>${icon}${l}</button>`).join("")}</div>
+      <button class="btn ghost" data-act="menu" style="align-self:center">Customize</button>`;
   } else {
-    const tg = [["today","To-do today"],["tomorrow","To-do tomorrow"],["week","This week"],["grocery","Grocery list"],["dump","Brain dump note"]];
+    const tg = [["auto","Smart"],["today","To-do today"],["tomorrow","To-do tomorrow"],["week","This week"],["grocery","Grocery list"],["dump","Brain dump note"]];
     el.innerHTML = `<div class="grab"></div><header><h2>Quick add</h2><button class="iconb" data-act="close" aria-label="Close">×</button></header>
       <form id="qform" class="sec" style="gap:14px" autocomplete="off">
-        <textarea id="q-text" class="ta" rows="3" placeholder="Jot it down. One item per line." aria-label="What to add"></textarea>
+        <textarea id="q-text" class="ta" rows="3" placeholder="${S.qTarget==="auto" ? "gym tomorrow 6am · dentist Oct 30 2:30 · call Mike friday" : "Jot it down. One item per line."}" aria-label="What to add"></textarea>
         <div class="chips" role="group" aria-label="Add to">${tg.map(([id,l]) => `<button type="button" class="chipb" data-act="qtarget" data-t="${id}" aria-pressed="${S.qTarget===id}">${l}</button>`).join("")}</div>
+        <div id="q-prev" aria-live="polite"${S.qTarget==="auto" ? "" : " hidden"}>${qPreview("")}</div>
         <button class="btn" type="submit" style="align-self:flex-start">Add</button>
       </form>`;
   }
   el.hidden = false; document.getElementById("scrim").hidden = false;
   const f = id==="qadd" ? document.getElementById("q-text") : el.querySelector('[data-act="close"]'); if(f) f.focus();
 }
+/* ---------- smart quick add: "gym tomorrow 6am", "dentist Oct 30 2:30", "call Mike friday" ---------- */
+const Q_MON = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+const Q_DOW = ["sun","mon","tue","wed","thu","fri","sat"];
+const Q_ACT = [["gym",/\b(gym|workout|lift(ing)?|weights|crossfit)\b/i],["swim",/\b(swim(ming)?|pool|laps)\b/i],["sauna",/\bsauna\b/i],["walk",/\b(walk(ing)?|hike|hiking)\b/i],["ride",/\b(ride|riding|bike|biking|cycl(e|ing)|spin)\b/i],["work",/^(work|shift)\b/i]];
+const Q_APPT = /\b(dr\.?|doctor|dentist|dental|orthodont\w*|appointment|appt|physical|check-?up|clinic|therapy|therapist|chiro\w*|optometrist|eye exam|dermatolog\w*|cardiolog\w*|lab work|bloodwork|blood work|mri|x-?ray|vaccine|flu shot|urgent care|pharmacy)\b/i;
+function qClock(h, mm, ap){
+  h = +h; mm = +(mm || 0); if(h > 23 || mm > 59) return null;
+  ap = (ap || "").toLowerCase();
+  if(ap.startsWith("p") && h < 12) h += 12; else if(ap.startsWith("a") && h === 12) h = 0;
+  else if(!ap && h >= 1 && h <= 6) h += 12;
+  return h * 60 + mm;
+}
+function qParse(line, td){
+  let t = " " + line + " ", date = null, start = null, end = null, dur = null, week = false;
+  const cut = re => { const m = t.match(re); if(m) t = t.replace(m[0], " "); return m; };
+  let m;
+  if(cut(/\b(this|next) week\b/i)) week = true;
+  if((m = cut(/\b(today|tonight)\b/i))) date = td;
+  else if((m = cut(/\b(tomorrow|tmrw|tmr)\b/i))) date = addDays(td, 1);
+  else if((m = cut(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/))){ const mo = +m[1]-1, d = +m[2]; if(mo < 12 && d >= 1 && d <= 31){ let y = m[3] ? +m[3] : td.getFullYear(); if(y < 100) y += 2000; date = new Date(y, mo, d); if(!m[3] && date < td) date = new Date(y+1, mo, d); } }
+  else if((m = cut(new RegExp("\\b(" + Q_MON.join("|") + ")[a-z]*\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b", "i")))){ const mo = Q_MON.indexOf(m[1].slice(0,3).toLowerCase()), y = td.getFullYear(); date = new Date(y, mo, +m[2]); if(date < td) date = new Date(y+1, mo, +m[2]); }
+  else if((m = cut(new RegExp("\\b(next\\s+|on\\s+)?(" + Q_DOW.join("|") + ")[a-z]*\\b", "i")))){ const w = Q_DOW.indexOf(m[2].slice(0,3).toLowerCase()); let n = (w - td.getDay() + 7) % 7; if(/next/i.test(m[1] || "") && n === 0) n = 7; else if(/next/i.test(m[1] || "") && n < 7) n += 0; date = addDays(td, n); }
+  // durations: "for 45 min", "1.5h", "90 minutes"
+  if((m = cut(/\b(?:for\s+)?(\d+(?:\.\d+)?)\s*(h|hr|hrs|hours?|m|min|mins|minutes?)\b(?!\s*(?:am|pm))/i))){ const v = +m[1]; dur = /^h/i.test(m[2]) ? Math.round(v * 60) : Math.round(v); if(dur < 5 || dur > 1440) dur = null; }
+  // ranges: "6-7am", "6:30 to 8pm", "9am-5pm"
+  if((m = cut(/\b(?:at\s+|from\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm|a|p)?\s*(?:-|–|to|until)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm|a|p)?\b/i))){
+    let ap2 = m[6] || "", ap1 = m[3] || (ap2 && +m[1] <= +m[4] ? ap2 : "");
+    start = qClock(m[1], m[2], ap1); end = qClock(m[4], m[5], ap2 || (start != null && start >= 720 ? "p" : ""));
+    if(start != null && end != null && end <= start) end += end + 720 <= 1440 && !ap2 ? 720 : 0;
+    if(start == null || end == null || end <= start){ start = null; end = null; }
+  }
+  else if((m = cut(/\b(noon|midday)\b/i))) start = 720;
+  else if((m = cut(/\b(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)/i))) start = qClock(m[1], m[2], m[3]);
+  else if((m = cut(/\bat\s+(\d{1,2})(?::(\d{2}))?\b/i)) || (m = cut(/\b(\d{1,2}):(\d{2})\b/))) start = qClock(m[1], m[2], "");
+  const title = t.replace(/\s+(at|on|from)\s*$/i, "").replace(/^\s*(at|on)\s+/i, "").replace(/\s{2,}/g, " ").trim().replace(/^[,.;:-]\s*/, "") || line.trim();
+  const act = (Q_ACT.find(([, re]) => re.test(title)) || [])[0];
+  const appt = Q_APPT.test(title);
+  const d = date || td;
+  if(appt && (date || start != null)) return { kind: "appt", date: d, start, title };
+  if(start != null){
+    const type = act || "custom", D = end != null ? end - start : dur || BT[type].dur;
+    const nice = act && title.toLowerCase().replace(Q_ACT.find(x => x[0]===act)[1], "").trim() === "" ? "" : title;
+    return { kind: "block", date: d, start, dur: Math.max(15, Math.min(1440 - start, D)), type, title: act ? nice : title };
+  }
+  if(week && !date) return { kind: "week", title };
+  return { kind: "todo", date: d, title };
+}
+const cap1 = x => x ? x[0].toUpperCase() + x.slice(1) : x;
+const qDay = (d, td) => sameDay(d, td) ? "Today" : sameDay(d, addDays(td, 1)) ? "Tomorrow" : `${DOW[dowIdx(d)]} ${MON3[d.getMonth()]} ${d.getDate()}`;
+function qPreview(text){
+  const td = todayDate(), lines = text.split("\n").map(x => x.trim()).filter(Boolean);
+  if(!lines.length) return `<p class="hint" style="margin:0">Try “gym tomorrow 6am”, “dentist Oct 30 2:30”, “swim fri 7-8am” or “call Mike friday”.</p>`;
+  return `<ul class="qprev">${lines.slice(0, 8).map(l => { const r = qParse(l, td);
+    const what = r.kind === "block" ? `<b>${esc(r.title || BT[r.type].l)}</b><span>${BT[r.type].l === "Custom" || !BT[r.type] ? "Schedule" : BT[r.type].l} · ${qDay(r.date, td)} · ${fmtMin(r.start)}–${fmtMin(r.start + r.dur)}</span>`
+      : r.kind === "appt" ? `<b>${esc(r.title)}</b><span>Health appointment · ${qDay(r.date, td)}${r.start != null ? " · " + fmtMin(r.start) : ""}</span>`
+      : r.kind === "week" ? `<b>${esc(r.title)}</b><span>To-do · this week</span>`
+      : `<b>${esc(r.title)}</b><span>To-do · ${qDay(r.date, td)}</span>`;
+    const ic = r.kind === "block" ? bIcon(r.type) : r.kind === "appt" ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg>';
+    return `<li class="q-${r.kind}">${ic}<span class="qtx">${what}</span></li>`; }).join("")}${lines.length > 8 ? `<li class="hint">…and ${lines.length - 8} more</li>` : ""}</ul>`;
+}
+function quickAuto(lines){
+  const td = todayDate(); let n = { block: 0, appt: 0, todo: 0 }, firstDay = null;
+  lines.forEach(l => { const r = qParse(l, td);
+    if(r.kind === "block"){ addBlock(r.type, r.start, { key: "d" + ymd(r.date), dur: r.dur, title: r.title, quiet: true }); n.block++; firstDay = firstDay || r.date; }
+    else if(r.kind === "appt"){ const doc = clone(get("health")); doc.appts = (doc.appts || []).filter(a => a && (a.what || a.who)); const dr = r.title.match(/\b(dr\.?\s+[a-z][\w'-]*)/i);
+      doc.appts.push({ date: ymd(r.date), time: r.start != null ? pad(Math.floor(r.start/60)) + ":" + pad(r.start%60) : "", who: dr ? dr[1].replace(/^dr\.?/i, "Dr.") : "", what: cap1(dr ? r.title.replace(dr[1], "").replace(/\s{2,}/g, " ").trim() || "Appointment" : r.title) }); put("health", doc); n.appt++; }
+    else if(r.kind === "week"){ addTodos("fw" + ymd(weekStart(td)), [r.title], 8); n.todo++; }
+    else { addTodos("d" + ymd(r.date), [r.title], 10); n.todo++; }
+  });
+  const parts = [n.block && `${n.block} to your schedule`, n.appt && `${n.appt} appointment${n.appt > 1 ? "s" : ""}`, n.todo && `${n.todo} to-do${n.todo > 1 ? "s" : ""}`].filter(Boolean);
+  toast("Added " + parts.join(", "));
+}
 function firstEmpty(arr, min){ for(let i=0;i<Math.max(min, arr.length);i++){ if(!arr[i] || !arr[i].t || !String(arr[i].t).trim()) return i; } return Math.max(min, arr.length); }
 function addTodos(k, lines, min){ const doc = clone(get(k)); doc.todo = doc.todo || []; lines.forEach(t => { const i = firstEmpty(doc.todo, min); doc.todo[i] = {t}; }); put(k, doc); }
 function quickAdd(text){
   const lines = text.split("\n").map(s => s.trim()).filter(Boolean); if(!lines.length) return false;
   const td = todayDate();
-  if(S.qTarget==="today"){ addTodos("d"+ymd(td), lines, 10); toast(lines.length>1 ? `Added ${lines.length} to-dos for today` : "Added to today's to-dos"); }
+  if(S.qTarget==="auto"){ quickAuto(lines); }
+  else if(S.qTarget==="today"){ addTodos("d"+ymd(td), lines, 10); toast(lines.length>1 ? `Added ${lines.length} to-dos for today` : "Added to today's to-dos"); }
   else if(S.qTarget==="tomorrow"){ addTodos("d"+ymd(addDays(td,1)), lines, 10); toast("Added to tomorrow's to-dos"); }
   else if(S.qTarget==="week"){ addTodos("fw"+ymd(weekStart(td)), lines, 8); toast("Added to this week's to-dos"); }
   else if(S.qTarget==="grocery"){ const doc = clone(get("groc")); doc.items = (doc.items||[]).filter(i => i && i.t); lines.forEach(t => doc.items.push({t})); put("groc", doc); toast(lines.length>1 ? `Added ${lines.length} grocery items` : "Added to the grocery list"); }
@@ -1949,7 +2147,7 @@ function vDay(){
       return `<button type="button" class="ti ta${short?" short":""}" data-act="wkopen" data-k="${it.fk}" data-i="${it.fi}" style="${pos(it)}" title="Done: ${esc(f.notes || f.type)} · ${esc(info)}" aria-label="Done: ${esc(f.notes || f.type)}, ${esc(info)}. Tap for details."><div class="tl"><i class="ck2" aria-hidden="true">✓</i><span>${esc(f.notes || f.type)}</span></div>${short ? "" : `<b>${esc(info)}</b>`}</button>`; }
     if(it.kind==="e"){ const e = it.e, inner = `<div class="tl"><span>${esc(e.title)}</span></div>${short?"":`<b>${fmtMin(it.s)}–${fmtMin(it.end)}</b>`}`;
       return e.link ? `<a class="ti te${short?" short":""}" href="${esc(e.link)}" target="_blank" rel="noopener" style="${pos(it)}${e.color?`;--ec:${e.color}`:""}" title="${esc(e.title)} · ${fmtMin(it.s)}–${fmtMin(it.end)}">${inner}</a>` : `<div class="ti te${short?" short":""}" style="${pos(it)}${e.color?`;--ec:${e.color}`:""}">${inner}</div>`; }
-    const b = it.b, L = BT[b.t].l;
+    const b = it.b, L = esc(blkName(b));
     return `<div class="ti tb${short?" short":""}" tabindex="0" role="button" data-blk="${b.id}" style="${pos(it)};--c:${tc(BT[b.t].c)}" aria-label="${L}, ${fmtMin(b.s)} to ${fmtMin(b.s+b.dur)}. Drag to move, drag the top or bottom edge to change the time, or tap to edit.">
       <span class="rh top" data-edge="top" aria-hidden="true"></span>
       <div class="tl">${bIcon(b.t)}<span>${L}</span>${b.rec ? `<i class="rp" title="Repeats ${esc(repeatLabel(b.days).toLowerCase())}" aria-label="repeats">↻</i>` : ""}${short?`<b class="tr">${fmtMin(b.s)}–${fmtMin(b.s+b.dur)}</b>`:""}</div>${short?"":`<b class="tr">${fmtMin(b.s)}–${fmtMin(b.s+b.dur)}</b>${b.note?`<em>${esc(b.note)}</em>`:""}`}
@@ -1958,26 +2156,31 @@ function vDay(){
   let rows = "";
   for(let hr=6; hr<=21; hr++){
     const isNow = sameDay(d, now) && now.getHours()===hr;
-    rows += `<div class="trow" data-hr="${hr}"><span class="t${isNow?" now":""}">${fmtHour(hr)}</span><div class="tnote">${I(k,`sched.${hr}`,{label:`${fmtHour(hr)} note`, ph: hr===6 && !blocks.length ? "Notes" : ""})}</div></div>`;
+    rows += `<div class="trow" data-hr="${hr}"><span class="t${isNow?" now":""}">${fmtHour(hr)}</span><span class="tadd" aria-hidden="true">${hr===8 && !blocks.length && !timed.length ? "Tap a time to add something" : ""}</span></div>`;
   }
   const nowMin = now.getHours()*60 + now.getMinutes();
   const nowLine = sameDay(d, now) && nowMin >= G0 && nowMin <= G1 ? `<div class="nowline" style="top:calc(var(--hh) * ${((nowMin-G0)/60).toFixed(4)})"></div>` : "";
-  const sched = `${rows}<div class="lane-guide"></div><div class="lane" id="lane">${items.map(tiHtml).join("")}</div>${nowLine}`;
-  const btray = `<div class="btray-wrap"><p class="cap" style="margin:0 0 7px">Drag onto your schedule, or tap one and then tap a time</p><div class="btray">${BLOCKS.map(([id,l,c]) => `<button class="blk-src" data-bt="${id}" style="--c:${tc(c)}" aria-pressed="${S.pickBlock===id}" aria-label="${l}. Drag onto an hour, or tap and then tap an hour.">${bIcon(id)}${l}</button>`).join("")}</div>${S.pickBlock?`<p class="pickhint" role="status">Tap a time on the schedule to add ${BT[S.pickBlock].l}. <button class="linkb" data-act="pickcancel">Cancel</button></p>`:""}</div>`;
+  const sched = `${rows}<div class="lane" id="lane">${items.map(tiHtml).join("")}</div>${nowLine}`;
+  const btray = `<div class="btray-wrap"><p class="cap" style="margin:0 0 7px">Tap or write on a time to add your own, or drag one of these on</p><div class="btray">${BLOCKS.map(([id,l,c]) => `<button class="blk-src" data-bt="${id}" style="--c:${tc(c)}" aria-pressed="${S.pickBlock===id}" aria-label="${l}. Drag onto an hour, or tap and then tap an hour.">${bIcon(id)}${l}</button>`).join("")}</div>${S.pickBlock?`<p class="pickhint" role="status">Tap a time on the schedule to add ${BT[S.pickBlock].l}. <button class="linkb" data-act="pickcancel">Cancel</button></p>`:""}</div>`;
   const pri = [0,1,2].map(i => `<div class="row pri${val(k,`pri.${i}.done`)?" done":""}"><span class="n">${i+1}</span>${C(k,`pri.${i}.done`)}${I(k,`pri.${i}.t`,{label:`Priority ${i+1}`})}</div>`).join("");
   const nTodo = Math.max(10, (get(k).todo||[]).length);
   const todo = Array.from({length:nTodo},(_,i) => { const t = val(k,`todo.${i}.t`); return `<div class="row${val(k,`todo.${i}.done`)?" done":""}">${C(k,`todo.${i}.done`)}${I(k,`todo.${i}.t`,{label:`To-do ${i+1}`})}${t && String(t).trim() && !val(k,`todo.${i}.done`) ? `<button class="xb mv" data-act="mvtodo" data-i="${i}" aria-label="Move to tomorrow" title="Move to tomorrow">↷</button>` : ""}</div>`; }).join("");
   const tray = STICKERS.map(([id,l,c]) => `<button data-act="stk" data-id="${id}" aria-pressed="${!!st[id]}" aria-label="${l} sticker"><span class="stk" style="--c:${tc(c)}">${l}</span></button>`).join("");
+  const wg = (() => { const v = get(k).wg; if(v != null) return +v; const o = hlDay(d); return hlHas(o, "water") ? Math.min(8, Math.round(num(o.water) / 8)) : 0; })();
+  const meals = `<div class="meals2">${[["b","Breakfast"],["l","Lunch"],["d","Dinner"],["s","Snacks"]].map(([f,l]) => `<label class="mrow"><span class="cap">${l}</span>${I(k, `meals.${f}`, { label: l })}</label>`).join("")}
+    <div class="mrow"><span class="cap">Water</span><div class="glasses" role="group" aria-label="Glasses of water">${Array.from({length:8}, (_, i) => `<button class="gl${i < wg ? " on" : ""}" data-act="glass" data-n="${i+1}" aria-pressed="${i < wg}" aria-label="${i+1} glass${i ? "es" : ""}"></button>`).join("")}</div><span class="hint" style="margin:0">${wg} of 8 glasses · ${wg*8} oz</span></div></div>`;
   return head(`${DOWL[dowIdx(d)]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`,
     `Day ${dayOfYear(d)} of ${yearLen(d.getFullYear())} · Week ${weekNo(d)}${h?` · <b style="color:var(--accent)">${esc(h)}</b>`:""}`, shiftNav("day")) +
   `<div class="dayg">
-    <div class="sec"><div><p class="lbl">Schedule</p>${gBar(true)}${allDay.length?`<div class="evs" style="margin:${gBar(true)?"10px":"0"} 0 10px">${allDay.map(e => evChip(e, true)).join("")}</div>`:""}${btray}<div class="tgrid${S.pickBlock?" picking":""}" id="tgrid">${sched}</div>${(() => { const early = blocks.filter(b => b.s < 360 || b.s + b.dur > 1320); return early.length ? `<div class="evs" style="margin-top:8px"><span class="cap">Outside 6a–10p</span>${early.map(b => blkSm(b, true)).join("")}</div>` : ""; })()}</div>
-      <div><p class="lbl">Stickers</p><div class="stray">${tray}</div><p class="muted" style="font-size:13px;margin:8px 0 0">Tap to stick one on this day. They show up on the week and month pages too.</p></div></div>
-    <div class="sec">
+    <div class="sec page-l"><div><p class="lbl">Schedule</p>${allDay.length?`<div class="evs" style="margin:0 0 10px">${allDay.map(e => evChip(e, true)).join("")}</div>`:""}${btray}<div class="tgrid${S.pickBlock?" picking":""}" id="tgrid">${sched}</div>${(() => { const early = blocks.filter(b => b.s < 360 || b.s + b.dur > 1320); return early.length ? `<div class="evs" style="margin-top:8px"><span class="cap">Outside 6a–10p</span>${early.map(b => blkSm(b, true)).join("")}</div>` : ""; })()}</div>
+    </div>
+    <div class="sec page-r">
       <div class="panel" style="gap:6px"><p class="lbl">Top 3</p><div class="stack">${pri}</div></div>
       <div><p class="lbl">To do</p><div class="stack">${todo}</div></div>
-      <div><p class="lbl">Notes</p>${T(k,"notes",{rows:5,label:"Day notes"})}</div>
+      <div><p class="lbl">Meals & water</p>${meals}</div>
+      <div><p class="lbl">Notes</p>${T(k,"notes",{rows:4,label:"Day notes"})}</div>
       <div><p class="lbl">Today's win</p>${I(k,"win",{ph:"One thing that went right",label:"Today's win"})}</div>
+      <div><p class="lbl">Stickers</p><div class="stray">${tray}</div><p class="muted" style="font-size:13px;margin:8px 0 0">They show up on the week and month pages too.</p></div>
     </div></div>`;
 }
 
@@ -2233,7 +2436,9 @@ function vFitness(){
   }).join("");
   const h = Math.floor(mins/60), mm = Math.round(mins%60);
   return head(`Fitness · ${MONTHS[m]}`, `Log rides, runs, gym sessions and anything else that moves you`, monthChips()) +
-  `<div class="sec">${vFitDash()}${vFitYear()}${stPanel()}<p class="lbl" style="margin:6px 0 -10px">${MONTHS[m]}</p><form class="fform" id="fitform" autocomplete="off">
+  `<div class="sec">${stStrip()}<div class="subnav seg fittabs" role="tablist" aria-label="Fitness views" style="grid-template-columns:repeat(3,1fr)">${[["overview","Overview"],["log",`${MON3[m]} log`],["year","Year"]].map(([id,l]) => `<button role="tab" data-act="fittab" data-t="${id}" aria-pressed="${S.fitTab===id}" aria-selected="${S.fitTab===id}">${l}</button>`).join("")}</div>` +
+  (S.fitTab === "overview" ? vFitDash() + `</div>` : S.fitTab === "year" ? vFitYear() + `</div>` :
+  `<form class="fform" id="fitform" autocomplete="off">
     <label><span>Date</span><input class="ln" type="date" id="fx-date" value="${ymd(S.day)}" min="${mk(y,m)}-01" max="${mk(y,m)}-${pad(dim(y,m))}"></label>
     <label><span>Type</span><select class="ln" id="fx-type">${FIT_TYPES.map(t=>`<option>${t}</option>`).join("")}</select></label>
     <label><span>Minutes</span><input class="ln" id="fx-min" inputmode="numeric" placeholder="45"></label>
@@ -2248,7 +2453,7 @@ function vFitness(){
     <div class="stat"><span class="cap">Mix</span><div class="v" style="font-size:14px;font-family:var(--body)">${Object.entries(byType).map(([t,c])=>`${esc(t)} ${c}`).join(" · ") || "—"}</div></div>
   </div>
   <div><p class="lbl">Minutes by week</p><div class="bars">${bars}</div></div>
-  <div><p class="lbl">Log</p>${rows?`<div class="tblwrap"><table class="ftbl"><thead><tr><th>Date</th><th>Type</th><th>Time</th><th>Distance</th><th>Notes</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">No workouts logged for ${MONTHS[m]} yet. Add one with the form above.</div>`}</div></div>`;
+  <div><p class="lbl">Log</p>${rows?`<div class="tblwrap"><table class="ftbl"><thead><tr><th>Date</th><th>Type</th><th>Time</th><th>Distance</th><th>Notes</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">No workouts logged for ${MONTHS[m]} yet. Add one with the form above.</div>`}</div></div>`);
 }
 
 function noteList(){
@@ -2435,7 +2640,7 @@ function vFamily(){
   </div></div>`;
 }
 
-const VIEWS = {home:vHome, health:vHealth, family:vFamily, cover:vCover, year:vYear, month:vMonth, week:vWeek, day:vDay, goals:vGoals, budget:vBudget, fitness:vFitness, notes:vNotes};
+const VIEWS = {home:vHome, health:vHealth, family:vFamily, cover:vCover, year:vYear, month:vMonth, week:vWeek, day:vDay, goals:vGoals, budget:vBudget, fitness:vFitness, notes:vNotes, connections:vConnections};
 const MONTH_AWARE = ["month","goals","budget","fitness"];
 
 /* ---------- render ---------- */
@@ -2443,7 +2648,7 @@ const app = document.getElementById("app");
 const main = document.getElementById("main");
 const tabsEl = document.getElementById("tabs");
 const stabsEl = document.getElementById("stabs");
-tabsEl.innerHTML = `<button class="ttab cover" data-go="cover">Cover</button>` + TABS.map(([v,l,c]) => `<button class="ttab" data-go="${v}" style="--c:${tc(c)}">${l}</button>`).join("");
+tabsEl.innerHTML = `<button class="ttab cover" data-go="cover">Cover</button>` + SECTIONS.map(([v,l,c]) => `<button class="ttab" data-go="${v}" style="--c:${tc(c)}">${l}</button>`).join("");
 stabsEl.innerHTML = MON3.map((m,i) => `<button class="stab" data-act="stab" data-m="${i}" style="--c:${tc(MONTH_COLORS[i])}" aria-label="${MONTHS[i]}">${m}</button>`).join("");
 const mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 function isDark(mode){
@@ -2501,20 +2706,22 @@ function render(){
   applySettings();
   applyBrand();
   document.getElementById("yr").textContent = Y();
-  tabsEl.querySelectorAll(".ttab").forEach(b => { if(b.dataset.go===S.view) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  const secNow = sectionOf(S.view);
+  tabsEl.querySelectorAll(".ttab").forEach(b => { if(b.dataset.go===S.view || b.dataset.go===secNow) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
   stabsEl.querySelectorAll(".stab").forEach(b => b.setAttribute("aria-current", String(+b.dataset.m===M())));
   main.className = "page sec-" + S.view;
-  main.innerHTML = VIEWS[S.view]();
+  main.innerHTML = subnav(S.view) + VIEWS[S.view]();
   if(S.view==="budget") paintBudget();
   if(S.view==="goals") paintHabits();
   if(S.view==="fitness"){ const hs = document.getElementById("hmscroll"); if(hs){ const t = hs.querySelector(".hm.today"); if(t){ const x = +t.getAttribute("x"); hs.scrollLeft = Math.max(0, x - hs.clientWidth + 60); } else hs.scrollLeft = hs.scrollWidth; } }
-  const prim = ["home","day","week","month"];
-  document.querySelectorAll("#bnav [data-go]").forEach(b => { if(b.dataset.go===S.view) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
-  const bm = document.getElementById("bn-more"); if(prim.includes(S.view)) bm.removeAttribute("aria-current"); else bm.setAttribute("aria-current","page");
+  const prim = ["home","planner","fitness","health"];
+  document.querySelectorAll("#bnav [data-go]").forEach(b => { if(b.dataset.go===secNow) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  const bm = document.getElementById("bn-more"); if(prim.includes(secNow)) bm.removeAttribute("aria-current"); else bm.setAttribute("aria-current","page");
   if(G.mode !== "direct" && G.mcp && gOn() && G.state==="off") gStart(); else gSync();
 }
-function go(view){ if(S.menu || S.sheet) closeMenu(); if(view!=="day") S.pickBlock = null; S.view = view; S.delArm = null; try { history.replaceState(null,"","#"+view); } catch(e) {} render(); window.scrollTo({top:0}); }
-const editing = () => { const a = document.activeElement; return !!(a && a.dataset && a.dataset.k && main.contains(a)); };
+function go(view){ if(S.menu || S.sheet) closeMenu(); view = resolveView(view); const sec = SECTIONS.find(x => x[3].includes(view)); if(sec && sec[3].length > 1){ lastSub[sec[0]] = view; try { localStorage.setItem("daybook-lastsub", JSON.stringify(lastSub)); } catch(e) {} }
+  if(view!=="day") S.pickBlock = null; S.view = view; S.delArm = null; try { history.replaceState(null,"","#"+view); } catch(e) {} render(); window.scrollTo({top:0}); }
+const editing = () => { const a = document.activeElement; return !!(a && main.contains(a) && ((a.dataset && a.dataset.k) || (a.matches && a.matches("#st-id,#st-secret")))); };
 
 /* ---------- events ---------- */
 function onField(e){
@@ -2542,6 +2749,8 @@ main.addEventListener("change", e => { if(e.target.id==="fit-goal"){ const v = M
 main.addEventListener("input", e => { if(e.target.id==="st-id"){ ST.cfg.clientId = e.target.value.trim(); stSave(); } else if(e.target.id==="st-secret"){ ST.cfg.clientSecret = e.target.value.trim(); stSave(); } });
 drawerEl.addEventListener("change", e => { if(e.target.id==="logo-file"){ handleLogo(e.target.files && e.target.files[0]); e.target.value = ""; } });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && (S.menu || S.sheet)) closeMenu(); });
+document.getElementById("qadd").addEventListener("input", e => { if(e.target.id === "q-text" && S.qTarget === "auto"){ const pv = document.getElementById("q-prev"); if(pv) pv.innerHTML = qPreview(e.target.value); } });
+document.getElementById("qadd").addEventListener("keydown", e => { if(e.target.id === "q-text" && e.key === "Enter" && (e.ctrlKey || e.metaKey)){ e.preventDefault(); document.getElementById("qform").requestSubmit(); } });
 document.getElementById("qadd").addEventListener("submit", e => {
   e.preventDefault();
   const t = document.getElementById("q-text");
@@ -2714,7 +2923,7 @@ function removeBlock(b, scope){
   });
 }
 function setRepeat(b, days, until){
-  const date = ymd(S.day), vals = { t: b.t, s: b.s, dur: b.dur, note: b.note };
+  const date = ymd(S.day), vals = { t: b.t, s: b.s, dur: b.dur, note: b.note, title: b.title };
   if(!b.rec){
     if(!days.length) return;
     removeBlock(b);
@@ -2735,12 +2944,15 @@ const SNAP = 15, G_START = 360;
 const snap = m => Math.round(m / SNAP) * SNAP;
 function blockKey(){ return "d" + ymd(S.day); }
 function newId(){ return "b" + Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
-function addBlock(type, startMin){
-  const k = blockKey(), doc = clone(get(k)), dur = BT[type].dur;
-  const s0 = Math.max(0, Math.min(1440 - dur, startMin));
+function addBlock(type, startMin, opt){
+  opt = opt || {};
+  const k = opt.key || blockKey(), doc = clone(get(k)), dur = opt.dur || BT[type].dur;
+  const s0 = Math.max(0, Math.min(1440 - dur, startMin)), id = newId();
   doc.blocks = (doc.blocks||[]).filter(Boolean);
-  doc.blocks.push({ id: newId(), t: type, s: s0, dur });
-  put(k, doc); toast(`Added ${BT[type].l}, ${fmtMin(s0)}–${fmtMin(s0+dur)}`);
+  const nb = { id, t: type, s: s0, dur }; if(opt.title) nb.title = opt.title; if(opt.note) nb.note = opt.note;
+  doc.blocks.push(nb);
+  put(k, doc); if(!opt.quiet) toast(`Added ${blkName(nb)}, ${fmtMin(s0)}–${fmtMin(s0+dur)}`);
+  return id;
 }
 function gridInfo(){ const g = document.getElementById("tgrid"); if(!g) return null; const r = g.getBoundingClientRect(); return { g, r, hh: parseFloat(getComputedStyle(g).getPropertyValue("--hh")) || 56 }; }
 const minAtY = (gi, y) => G_START + (y - gi.r.top) / gi.hh * 60;
@@ -2840,7 +3052,7 @@ document.addEventListener("keydown", e => {
   if(tb && (e.key==="Enter" || e.key===" ")){ e.preventDefault(); tapBlockEl(tb); }
 });
 function keepSheet(){
-  const keep = {}; ["bk-t","bk-s","bk-d","bk-n"].forEach(id => { const el = document.getElementById(id); if(el) keep[id] = el.value; });
+  const keep = {}; ["bk-title","bk-t","bk-s","bk-d","bk-n"].forEach(id => { const el = document.getElementById(id); if(el) keep[id] = el.value; });
   const u = document.getElementById("bk-u"); if(u) S.bkUntil = u.value;
   openSheet("blk");
   Object.entries(keep).forEach(([id,v]) => { const el = document.getElementById(id); if(el) el.value = v; });
@@ -2855,10 +3067,11 @@ document.getElementById("blk").addEventListener("change", e => {
 document.getElementById("blk").addEventListener("submit", e => {
   e.preventDefault();
   const b = findBlock(S.blkEdit); if(!b) return closeMenu();
-  const ch = { t: document.getElementById("bk-t").value, s: +document.getElementById("bk-s").value, dur: +document.getElementById("bk-d").value, note: document.getElementById("bk-n").value.trim() };
+  const ch = { t: document.getElementById("bk-t").value, s: +document.getElementById("bk-s").value, dur: +document.getElementById("bk-d").value, note: document.getElementById("bk-n").value.trim(), title: document.getElementById("bk-title").value.trim() };
+  S.blkNew = null;
   const days = [...new Set(S.bkDays||[])].sort(), untilEl = document.getElementById("bk-u"), until = days.length && untilEl ? untilEl.value : "";
   const oldDays = [...(b.days||[])].sort().join(), repChanged = days.join() !== oldDays || (b.rec && until !== (b.until||""));
-  const valChanged = ch.t!==b.t || ch.s!==b.s || ch.dur!==b.dur || (ch.note||"")!==(b.note||"");
+  const valChanged = ch.t!==b.t || ch.s!==b.s || ch.dur!==b.dur || (ch.note||"")!==(b.note||"") || (ch.title||"")!==(b.title||"");
   if(valChanged) updateBlock(b, ch, b.rec ? S.bkScope : "one");
   if(repChanged){ const fresh = findBlock(S.blkEdit) || {...b, ...ch}; setRepeat({...fresh, ...ch}, days, until); }
   closeMenu(); render();
@@ -2870,9 +3083,17 @@ document.addEventListener("click", e => {
     if(e.detail === 0 && e.target.closest(".blk-src")) tapBlockEl(e.target.closest(".blk-src"));   /* keyboard Enter/Space */
     return;
   }
-  if(S.pickBlock && S.view==="day"){
+  if(S.view==="day"){
     const row = e.target.closest(".trow"), gi = gridInfo();
-    if(row && gi && main.contains(row)){ e.preventDefault(); const type = S.pickBlock; S.pickBlock = null; addBlock(type, Math.max(0, Math.floor(minAtY(gi, e.clientY) / 30) * 30)); render(); return; }
+    if(row && gi && main.contains(row)){
+      e.preventDefault();
+      const at = Math.max(0, Math.floor(minAtY(gi, e.clientY) / 30) * 30);
+      if(S.pickBlock){ const type = S.pickBlock; S.pickBlock = null; addBlock(type, at); render(); return; }
+      const id = addBlock("custom", at, { quiet: true }); render();
+      S.blkEdit = id; S.blkNew = id; S.bkDays = null; S.bkScope = null; S.bkUntil = null; openSheet("blk");
+      const ti = document.getElementById("bk-title"); if(ti) ti.focus();
+      return;
+    }
   }
   const g = e.target.closest("[data-go]");
   if(g){ if(g.dataset.date) S.day = parseYmd(g.dataset.date); go(g.dataset.go); return; }
@@ -2892,6 +3113,11 @@ document.addEventListener("click", e => {
     if(!S.wkDelArm){ S.wkDelArm = true; document.getElementById("wk").innerHTML = wkSheet(); return; }
     const doc = clone(get(S.wk.k)); const rm = (doc.log || []).splice(S.wk.i, 1)[0]; put(S.wk.k, doc); closeMenu(); render(); if(rm) toast(`Deleted ${rm.notes || rm.type} from your log`);
   }
+  else if(a==="homeedit"){ openSheet("home"); }
+  else if(a==="hometog"){ const on = homeCards().slice(), id = b.dataset.id; const nx = b.checked ? [...on.filter(x => x!==id), id] : on.filter(x => x!==id); edit("settings","homeCards", nx); render(); document.getElementById("home").innerHTML = homeEditor(); }
+  else if(a==="homemove"){ const on = homeCards().slice(), i = on.indexOf(b.dataset.id), j = i + +b.dataset.d; if(i>=0 && j>=0 && j<on.length){ [on[i], on[j]] = [on[j], on[i]]; edit("settings","homeCards", on); render(); document.getElementById("home").innerHTML = homeEditor(); const nb = document.querySelector(`#home [data-act="homemove"][data-id="${b.dataset.id}"][data-d="${b.dataset.d}"]`); if(nb && !nb.disabled) nb.focus(); } }
+  else if(a==="homereset"){ const doc = clone(get("settings")); delete doc.homeCards; put("settings", doc); render(); document.getElementById("home").innerHTML = homeEditor(); }
+  else if(a==="glass"){ const k = "d"+ymd(S.day); const cur = get(k).wg != null ? +get(k).wg : 0; const n = +b.dataset.n; const v = cur === n ? n - 1 : n; edit(k, "wg", v); edit(hlKey(S.day), `days.${S.day.getDate()}.water`, v ? String(v*8) : ""); render(); }
   else if(a==="hlenergy"){ const k = hlKey(S.day), p = `days.${S.day.getDate()}.energy`; edit(k, p, String(val(k, p))===b.dataset.v ? "" : b.dataset.v); render(); }
   else if(a==="stconnect"){ stAuthorize(); }
   else if(a==="stsync"){ stSync(false); }
@@ -2901,15 +3127,16 @@ document.addEventListener("click", e => {
   else if(a==="blkdel"){ const rm = findBlock(S.blkEdit); if(rm){ removeBlock(rm, b.dataset.v); toast(b.dataset.v==="future" ? `${BT[rm.t].l} stops repeating from ${MON3[S.day.getMonth()]} ${S.day.getDate()}` : `Removed ${BT[rm.t].l}${rm.rec ? " for this day" : ""}`); } closeMenu(); render(); }
   else if(a==="bkscope"){ S.bkScope = b.dataset.v; document.querySelectorAll('#blk [data-act="bkscope"]').forEach(x => x.setAttribute("aria-pressed", String(x===b))); }
   else if(a==="bkday"){ const i = +b.dataset.d, set = new Set(S.bkDays||[]); set.has(i) ? set.delete(i) : set.add(i); S.bkDays = [...set]; const u = document.getElementById("bk-u"); if(u) S.bkUntil = u.value; keepSheet(); }
-  else if(a==="blkcopy"){ const src0 = findBlock(S.blkEdit), src = src0 && { id: src0.id, t: src0.t, s: src0.s, dur: src0.dur, ...(src0.note ? { note: src0.note } : {}) }; if(src){ const tk = "d"+ymd(addDays(S.day,1)), doc = clone(get(tk)); doc.blocks = (doc.blocks||[]).filter(Boolean); doc.blocks.push({...src, id: "b" + Date.now().toString(36) + Math.random().toString(36).slice(2,5)}); put(tk, doc); toast(`Copied ${BT[src.t].l} to tomorrow`); } }
+  else if(a==="blkcopy"){ const src0 = findBlock(S.blkEdit), src = src0 && { id: src0.id, t: src0.t, s: src0.s, dur: src0.dur, ...(src0.note ? { note: src0.note } : {}), ...(src0.title ? { title: src0.title } : {}) }; if(src){ const tk = "d"+ymd(addDays(S.day,1)), doc = clone(get(tk)); doc.blocks = (doc.blocks||[]).filter(Boolean); doc.blocks.push({...src, id: "b" + Date.now().toString(36) + Math.random().toString(36).slice(2,5)}); put(tk, doc); toast(`Copied ${BT[src.t].l} to tomorrow`); } }
   else if(a==="rzarm"){ S.rzArm = true; S.rzText = ""; S.rzKeep = true; renderMenu(); const t = document.getElementById("rz-type"); if(t) t.focus(); }
   else if(a==="rzcancel"){ S.rzArm = false; S.rzText = ""; renderMenu(); const r = document.querySelector('#drawer [data-act="rzarm"]'); if(r) r.focus(); }
   else if(a==="rzgo"){ if(S.rzText.trim().toUpperCase()==="RESET") resetAll(); }
   else if(a==="logorm"){ const doc = clone(get("settings")); delete doc.logo; put("settings", doc); applyBrand(); renderMenu(); if(S.view==="cover") render(); toast("Default logo restored"); }
   else if(a==="close"){ closeMenu(); }
   else if(a==="more"){ openSheet("more"); }
+  else if(a==="fittab"){ S.fitTab = b.dataset.t; render(); }
   else if(a==="qadd"){ openSheet("qadd"); }
-  else if(a==="qtarget"){ S.qTarget = b.dataset.t; document.querySelectorAll('#qadd [data-act="qtarget"]').forEach(x => x.setAttribute("aria-pressed", String(x===b))); }
+  else if(a==="qtarget"){ S.qTarget = b.dataset.t; document.querySelectorAll('#qadd [data-act="qtarget"]').forEach(x => x.setAttribute("aria-pressed", String(x===b))); const pv = document.getElementById("q-prev"), qt = document.getElementById("q-text"); if(pv){ pv.hidden = S.qTarget !== "auto"; pv.innerHTML = qPreview(qt ? qt.value : ""); } if(qt){ qt.placeholder = S.qTarget==="auto" ? "gym tomorrow 6am · dentist Oct 30 2:30 · call Mike friday" : "Jot it down. One item per line."; qt.focus(); } }
   else if(a==="gconnect"){ gConnect(); }
   else if(a==="grefresh"){ gRefresh(); }
   else if(a==="gdisc"){ gDisconnect(); }
@@ -3007,7 +3234,7 @@ setStatus("Saved on this device");
         changed = true;
       });
       if(first){ first = false; [...pending].forEach(flush); if(!pending.size) setStatus("Synced", "ok"); }
-      if(changed){ migrateWeeks(); cacheLocal(); if(editing()) dirty = true; else render(); }
+      if(changed){ migrateWeeks(); migrateSched(); cacheLocal(); if(editing()) dirty = true; else render(); }
     }, () => setStatus("Sync stopped. Reload the page to reconnect.", "err"));
   } catch(e) { setStatus("Saved on this device only"); }
 })();

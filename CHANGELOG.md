@@ -2,6 +2,18 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v2.3 · 2026-10-26
+
+- **Six sections instead of eleven tabs:** Home, Planner (Day, Week, Month, Year), Fitness, Health, Money and Life (Family, Goals & Habits, Notes). Each section remembers which page you were last on. On the phone, the bottom bar shows Home, Planner, Fitness, Health and More.
+- **The Day page is one timeline.** Tap any empty time, or write on it with your pen, to add your own entry, then give it a name. Work, Gym, Swim, Sauna, Walk and Ride still drag on as before. Notes you'd written next to an hour move into the timeline by themselves.
+  - Meals and water now have their own section on the Day page. Tapping a water glass also logs it on the Health page.
+  - On a tablet held sideways, the Day page opens like a two-page spread.
+- **A calmer Home.** It shows six cards by default: Up next, Today, Fitness this week (new), Health, Coming up and Budget. Tap **Customize Home** to turn cards on or off and change their order. All the older cards are still there to choose from.
+- **New Connections page** for Google Calendar, Strava and Pen mode, with a status light for each. Open it from Customize, from More on the phone, or from the cover. The Fitness page now shows a one-line Strava strip with **Sync now**. In the beta, your Daybook account appears here too.
+- **Smart quick add.** Type things like "gym tomorrow 6am", "dentist Oct 30 2:30", "swim fri 7-8am" or "call Mike friday", one per line. Workouts and timed items land on your schedule, doctor and dentist visits go to Health appointments, and the rest become to-dos on the right day. A preview shows where each line will go before you tap Add. The old to-do, grocery and brain dump choices are still there.
+- **Fitness page tabs:** Overview, the month's log, and Year.
+- "Work notes" is now just "Notes".
+
 ## v2.2 · 2026-10-26
 
 - **Pen mode** for writing with a tablet stylus. It turns on by itself the first time your pen touches the planner, and you can switch it off in **Customize › Writing with a stylus**.
