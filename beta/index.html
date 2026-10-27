@@ -250,6 +250,11 @@ button.ti.ta{border:0;border-left:3px solid #FC4C02;text-align:left;font:inherit
 .liftlog{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 16px;padding:14px 16px;border-radius:14px;border:1px dashed var(--line);background:color-mix(in srgb, var(--sec) 7%, var(--paper))}
 .liftlog > div{flex:1 1 260px}
 .liftchart{max-width:680px}
+.liftsel.m-reps{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.liftsel.m-laps,.liftsel.m-min{grid-template-columns:minmax(0,1fr)}
+.hrow.m-reps{grid-template-columns:minmax(0,2fr) minmax(0,1.1fr) minmax(0,.9fr) 30px}
+.hrow.m-laps,.hrow.m-min{grid-template-columns:minmax(0,2fr) minmax(0,1.1fr) 30px}
+@media (max-width:620px){ .hrow.m-reps{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 30px} .hrow.m-laps,.hrow.m-min{grid-template-columns:minmax(0,1fr) 30px} }
 .lift.saved{border-color:color-mix(in srgb, var(--good) 45%, var(--line))}
 .liftsave{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 .liftok{font-size:12.5px;font-weight:700;color:var(--good);margin-right:auto}
@@ -2530,38 +2535,71 @@ function vFitYear(){
   </section>`;
 }
 
-/* ---------- Strength: saved upper/lower routines (doc "lift") and logged sessions (doc "lt"+date) ---------- */
-const LIFT_SPLITS = [["upper","Upper body"],["lower","Lower body"]];
+/* ---------- Gym: saved Upper body / Lower body / Daily routines (doc "lift") and logged days (doc "lt"+date) ---------- */
+const LIFT_SPLITS = [["upper","Upper body"],["lower","Lower body"],["daily","Daily"]];
 const EQUIP = ["Machine","Cable","Dumbbells","Barbell","Smith machine","Kettlebell","Bodyweight","Bands","Other"];
 const W_OPTS = [0, ...Array.from({length:20}, (_, i) => (i+1)*2.5), ...Array.from({length:90}, (_, i) => 55 + i*5)];
+/* how an item is measured: lift = weight × reps × sets, reps = reps × sets, laps, min = minutes */
+const MEAS = [["lift","Weight, reps & sets"],["reps","Reps & sets"],["laps","Laps"],["min","Minutes"]];
+const R30 = Array.from({length:30}, (_, i) => i+1), R100 = [...Array.from({length:50}, (_, i) => i+1), ...Array.from({length:30}, (_, i) => 55 + i*5), 250, 300], SETS = [1,2,3,4,5,6,7,8];
+const MIN_OPTS = [1,2,3,4,5,6,7,8,9,10,12,15,18,20,25,30,35,40,45,50,55,60,75,90,105,120];
 const LIFT_START = {
   upper: [["Chest press","Machine"],["Lat pulldown","Cable"],["Seated row","Machine"],["Shoulder press","Dumbbells"],["Biceps curl","Dumbbells"],["Triceps pushdown","Cable"]],
-  lower: [["Leg press","Machine"],["Leg extension","Machine"],["Seated leg curl","Machine"],["Goblet squat","Kettlebell"],["Calf raise","Machine"],["Hip abductor","Machine"]]
+  lower: [["Leg press","Machine"],["Leg extension","Machine"],["Seated leg curl","Machine"],["Goblet squat","Kettlebell"],["Calf raise","Machine"],["Hip abductor","Machine"]],
+  daily: [["Walking laps","", "laps", { n: 10 }],["Stretching","", "min", { t: 10 }],["Sit-ups","", "reps", { reps: 20, sets: 3 }],["Sauna","", "min", { t: 15 }]]
 };
 const fmtW = w => +w ? `${+w % 1 ? (+w).toFixed(1) : +w} lb` : "Body wt";
+const measOf = e => MEAS.some(m => m[0] === e.m) ? e.m : "lift";
+const splitName = sp => sp === "lower" ? "Lower body" : sp === "daily" ? "Daily" : "Upper body";
+/* one number to compare against last time (and for "best") */
+const measVal = e => { const m = measOf(e); return m === "lift" ? +e.w || 0 : m === "reps" ? (+e.reps||0) * (+e.sets||0) : m === "laps" ? +e.n || 0 : +e.t || 0; };
+function measText(e){
+  const m = measOf(e);
+  if(m === "lift") return `${e.sets} × ${e.reps} at ${fmtW(e.w)}`;
+  if(m === "reps") return `${e.sets} × ${e.reps}`;
+  if(m === "laps") return `${+e.n || 0} lap${+e.n === 1 ? "" : "s"}`;
+  return `${+e.t || 0} min`;
+}
+const bestText = (e, v) => { const m = measOf(e); return m === "lift" ? fmtW(v) : m === "reps" ? `${v} total` : m === "laps" ? `${v} laps` : `${v} min`; };
 function liftSplit(){ const v = get("settings").liftSplit; return LIFT_SPLITS.some(x => x[0] === v) ? v : "upper"; }
 function liftList(sp){
   const doc = get("lift");
-  if(!Array.isArray(doc[sp])){ const nd = clone(doc); nd[sp] = LIFT_START[sp].map(([name, equip]) => ({ id: newId(), name, equip, machine: "", sets: 3, reps: 10, w: 0 })); put("lift", nd); return nd[sp]; }
+  if(!Array.isArray(doc[sp])){
+    const nd = clone(doc);
+    nd[sp] = LIFT_START[sp].map(([name, equip, m, o]) => ({ id: newId(), name, equip, machine: "", m: m || "lift", sets: 3, reps: 10, w: 0, n: 10, t: 10, ...(o || {}) }));
+    put("lift", nd); return nd[sp];
+  }
   return doc[sp].filter(Boolean);
 }
 const optList = (vals, cur, fmt) => vals.map(v => `<option value="${v}"${+cur === +v ? " selected" : ""}>${fmt(v)}</option>`).join("");
+/* the drop-downs for one item; k/P point at the saved record so the generic field handler saves changes */
+function measSelects(k, P, e, big, words){
+  const m = measOf(e), nm = esc(e.name || "Item"), cls = `ln${big ? " big" : ""}`;
+  const sel = (f, opts, fmt, lab) => `<select class="${cls}" id="${fid(k,`${P}.${f}`)}" data-k="${k}" data-p="${P}.${f}" data-num="1" aria-label="${nm} ${lab}">${optList(opts, e[f] ?? opts[0], fmt)}</select>`;
+  const wrap = (lab, html) => big ? `<label><span class="cap">${lab}</span>${html}</label>` : html;
+  if(m === "lift") return wrap("Weight", sel("w", W_OPTS, fmtW, "weight")) + wrap("Reps", sel("reps", R30, v => words ? v + " reps" : v, "reps")) + wrap("Sets", sel("sets", SETS, v => words ? v + (v === 1 ? " set" : " sets") : v, "sets"));
+  if(m === "reps") return wrap("Reps", sel("reps", R100, v => words ? v + " reps" : v, "reps")) + wrap("Sets", sel("sets", SETS, v => words ? v + (v === 1 ? " set" : " sets") : v, "sets"));
+  if(m === "laps") return wrap("Laps", sel("n", R100, v => v + (v === 1 ? " lap" : " laps"), "laps"));
+  return wrap("Minutes", sel("t", MIN_OPTS, v => v + " min", "minutes"));
+}
 function liftSessions(sp){
   return [...store.entries()].filter(([k, v]) => /^lt\d{4}-\d\d-\d\d$/.test(k) && v && Array.isArray(v.ex) && v.ex.some(Boolean))
     .map(([k, v]) => ({ key: k, date: k.slice(2), mins: v.mins || "", ex: v.ex.filter(Boolean).map(e => ({ ...e, split: e.split || v.split || "upper" })) }))
     .filter(x => !sp || x.ex.some(e => e.split === sp)).sort((a, b) => b.date.localeCompare(a.date));
 }
-const liftVol = list => list.reduce((a, e) => a + (+e.sets||0) * (+e.reps||0) * (+e.w||0), 0);
-const splitName = sp => sp === "lower" ? "Lower body" : "Upper body";
+const liftVol = list => list.reduce((a, e) => a + (measOf(e) === "lift" ? (+e.sets||0) * (+e.reps||0) * (+e.w||0) : 0), 0);
 const shortDate = (d, td) => sameDay(d, td) ? "today" : sameDay(d, addDays(td, -1)) ? "yesterday" : `${DOW[dowIdx(d)]} ${MON3[d.getMonth()]} ${d.getDate()}`;
 function liftDate(){ const v = S.liftDate, t = ymd(todayDate()); return v && /^\d{4}-\d\d-\d\d$/.test(v) && v <= t ? v : t; }
-/* write one or more exercises (current settings) into the chosen day's workout, then keep the fitness log in step */
+const sameRec = (a, b) => measOf(a) === measOf(b) && ["w","reps","sets","n","t"].filter(f => relevant(b, f)).every(f => (+a[f]||0) === (+b[f]||0)) && (a.machine || "") === (b.machine || "") && (a.equip || "") === (b.equip || "");
+const relevant = (e, f) => { const m = measOf(e); return m === "lift" ? ["w","reps","sets"].includes(f) : m === "reps" ? ["reps","sets"].includes(f) : m === "laps" ? f === "n" : f === "t"; };
+/* write one or more items (current settings) into the chosen day, then keep the fitness log in step */
 function liftSave(exs, date){
   const k = "lt" + date, doc = clone(get(k)), now = Date.now();
   doc.ex = (doc.ex || []).filter(Boolean).map(e => ({ ...e, split: e.split || doc.split || "upper" })); delete doc.split;
   const sel = document.getElementById("lift-mins"); if(sel) doc.mins = String(sel.value); else if(!doc.mins) doc.mins = "45";
   exs.forEach(({ e, sp }) => {
-    const rec = { id: e.id, name: String(e.name || "").trim() || "Exercise", equip: e.equip || "", machine: e.machine || "", sets: +e.sets || 0, reps: +e.reps || 0, w: +e.w || 0, split: sp, at: now };
+    const m = measOf(e), rec = { id: e.id, name: String(e.name || "").trim() || "Exercise", equip: e.equip || "", machine: e.machine || "", m, split: sp, at: now };
+    ["w","reps","sets","n","t"].forEach(f => { if(relevant(e, f)) rec[f] = +e[f] || 0; });
     const i = doc.ex.findIndex(x => x.id === e.id); if(i >= 0) doc.ex[i] = rec; else doc.ex.push(rec);
   });
   put(k, doc); liftSyncLog(date);
@@ -2569,79 +2607,77 @@ function liftSave(exs, date){
 function liftSyncLog(date){
   const s = get("lt" + date), exs = (s.ex || []).filter(Boolean), d = parseYmd(date), fk = "f" + mk(d.getFullYear(), d.getMonth()), doc = clone(get(fk));
   doc.log = (doc.log || []).filter(Boolean);
-  const sps = [...new Set(exs.map(e => e.split || s.split || "upper"))], label = sps.length > 1 ? "Upper & lower body" : splitName(sps[0]);
-  const i = doc.log.findIndex(e => e.lift && e.date === date);
-  if(!exs.length){ if(i >= 0){ doc.log.splice(i, 1); put(fk, doc); } return; }
-  const extra = doc.log.filter((e, j) => j !== i && e.lift && e.date === date); if(extra.length) doc.log = doc.log.filter((e, j) => j === i || !(e.lift && e.date === date));
+  if(!exs.length){ const n0 = doc.log.length; doc.log = doc.log.filter(e => !(e.lift && e.date === date)); if(doc.log.length !== n0) put(fk, doc); return; }
+  const sps = LIFT_SPLITS.map(x => x[0]).filter(sp => exs.some(e => (e.split || s.split || "upper") === sp));
+  const names = sps.map(splitName), label = names.length > 1 ? names.slice(0, -1).join(", ") + " & " + names[names.length - 1].replace(" body", "") : names[0];
+  const firstI = doc.log.findIndex(e => e.lift && e.date === date);
+  doc.log = doc.log.filter((e, j) => j === firstI || !(e.lift && e.date === date));
   const j = doc.log.findIndex(e => e.lift && e.date === date);
-  const rec = { date, type: "Strength", mins: String(s.mins || ""), dist: "", notes: `${label} · ${exs.length} exercise${exs.length === 1 ? "" : "s"}`, lift: sps.join("+") };
+  const rec = { date, type: sps.some(x => x !== "daily") ? "Strength" : "Mobility", mins: String(s.mins || ""), dist: "", notes: `Gym · ${label} · ${exs.length} item${exs.length === 1 ? "" : "s"}`, lift: sps.join("+") };
   if(j >= 0) doc.log[j] = { ...doc.log[j], ...rec }; else doc.log.push(rec);
   put(fk, doc);
 }
 function liftDelSession(date){ remove("lt" + date); liftSyncLog(date); }
 function vStrength(){
-  const sp = liftSplit(), list = liftList(sp), td = todayDate(), date = liftDate(), dD = parseYmd(date), all = liftSessions(null);
+  const sp = liftSplit(), list = liftList(sp), td = todayDate(), date = liftDate(), dD = parseYmd(date), all = liftSessions(null), daily = sp === "daily";
   const target = all.find(x => x.date === date) || null;
   const lastOf = id => { for(const x of all){ if(x.date >= date) continue; const e = x.ex.find(y => y.id === id); if(e) return { e, date: x.date }; } return null; };
-  const best = {}; all.forEach(x => x.ex.forEach(e => { if(+e.w > (best[e.id] || 0)) best[e.id] = +e.w; }));
+  const best = {}; all.forEach(x => x.ex.forEach(e => { const v = measVal(e); if(v > (best[e.id] || 0)) best[e.id] = v; }));
   const raw = get("lift")[sp] || [], dayWord = shortDate(dD, td);
   const cards = list.map((e, i) => {
-    const j = raw.indexOf(e), P = `${sp}.${j}`, L = lastOf(e.id), last = L && L.e, saved = target && target.ex.find(x => x.id === e.id);
-    const same = saved && +saved.w === +e.w && +saved.reps === +e.reps && +saved.sets === +e.sets && (saved.machine || "") === (e.machine || "") && (saved.equip || "") === (e.equip || "");
-    const up = last && (+e.w > +last.w || (+e.w === +last.w && +e.reps > +last.reps) || (+e.w === +last.w && +e.reps === +last.reps && +e.sets > +last.sets));
-    const down = last && !up && (+e.w < +last.w || (+e.w === +last.w && +e.reps < +last.reps));
-    const lastTxt = last ? `Last time (${MON3[parseYmd(L.date).getMonth()]} ${parseYmd(L.date).getDate()}): ${last.sets} × ${last.reps} at ${fmtW(last.w)}` : "Not logged yet";
+    const j = raw.indexOf(e), P = `${sp}.${j}`, L = lastOf(e.id), last = L && L.e, saved = target && target.ex.find(x => x.id === e.id), m = measOf(e);
+    const same = saved && sameRec(saved, e);
+    const cmp = last && measOf(last) === m ? (m === "lift" ? (+e.w - +last.w) || (+e.reps - +last.reps) || (+e.sets - +last.sets) : measVal(e) - measVal(last)) : 0;
+    const lastTxt = last ? `Last time (${MON3[parseYmd(L.date).getMonth()]} ${parseYmd(L.date).getDate()}): ${measText(last)}` : "Not logged yet";
+    const gear = daily
+      ? `<label><span class="cap">Track by</span><select class="ln" id="${fid("lift",`${P}.m`)}" data-k="lift" data-p="${P}.m" aria-label="Track by">${MEAS.filter(x => x[0] !== "lift").map(([id, l]) => `<option value="${id}"${id===m?" selected":""}>${l}</option>`).join("")}</select></label>
+         <label><span class="cap">Where or notes</span>${I("lift", `${P}.machine`, { ph: "e.g. indoor track, 8 laps = 1 mi", label: "Where or notes" })}</label>`
+      : `<label><span class="cap">Equipment</span><select class="ln" id="${fid("lift",`${P}.equip`)}" data-k="lift" data-p="${P}.equip" aria-label="Equipment">${EQUIP.map(x => `<option${x===e.equip?" selected":""}>${x}</option>`).join("")}</select></label>
+         <label><span class="cap">Machine or station</span>${I("lift", `${P}.machine`, { ph: "e.g. Life Fitness, seat 4", label: "Machine or station" })}</label>`;
     return `<section class="lift${saved ? " saved" : ""}">
-      <div class="lifthead"><b class="liftn">${i+1}</b>${I("lift", `${P}.name`, { ph: "Exercise", label: `Exercise ${i+1} name` })}
+      <div class="lifthead"><b class="liftn">${i+1}</b>${I("lift", `${P}.name`, { ph: daily ? "Activity" : "Exercise", label: `${daily ? "Activity" : "Exercise"} ${i+1} name` })}
         <span class="liftmv"><button class="iconb" data-act="liftmv" data-i="${j}" data-d="-1" aria-label="Move up"${i===0?" disabled":""}>↑</button><button class="iconb" data-act="liftmv" data-i="${j}" data-d="1" aria-label="Move down"${i===list.length-1?" disabled":""}>↓</button>
-        <button class="xb${S.liftArm===e.id?" armed":""}" data-act="liftdel" data-id="${e.id}" aria-label="${S.liftArm===e.id?"Tap again to remove":"Remove exercise"}">${S.liftArm===e.id?"Remove?":"×"}</button></span></div>
-      <div class="liftgear"><label><span class="cap">Equipment</span><select class="ln" id="${fid("lift",`${P}.equip`)}" data-k="lift" data-p="${P}.equip" aria-label="Equipment">${EQUIP.map(x => `<option${x===e.equip?" selected":""}>${x}</option>`).join("")}</select></label>
-        <label><span class="cap">Machine or station</span>${I("lift", `${P}.machine`, { ph: "e.g. Life Fitness, seat 4", label: "Machine or station" })}</label></div>
-      <div class="liftsel">
-        <label><span class="cap">Weight</span><select class="ln big" id="${fid("lift",`${P}.w`)}" data-k="lift" data-p="${P}.w" data-num="1" aria-label="${esc(e.name||"Exercise")} weight">${optList(W_OPTS, e.w, fmtW)}</select></label>
-        <label><span class="cap">Reps</span><select class="ln big" id="${fid("lift",`${P}.reps`)}" data-k="lift" data-p="${P}.reps" data-num="1" aria-label="${esc(e.name||"Exercise")} reps">${optList(Array.from({length:30},(_,i)=>i+1), e.reps, v => v)}</select></label>
-        <label><span class="cap">Sets</span><select class="ln big" id="${fid("lift",`${P}.sets`)}" data-k="lift" data-p="${P}.sets" data-num="1" aria-label="${esc(e.name||"Exercise")} sets">${optList([1,2,3,4,5,6,7,8], e.sets, v => v)}</select></label>
-      </div>
-      <p class="liftlast${up?" up":down?" down":""}">${up ? "▲ Up from last time · " : down ? "▼ Lighter than last time · " : ""}${lastTxt}${best[e.id] ? ` · Best ${fmtW(best[e.id])}` : ""}</p>
+        <button class="xb${S.liftArm===e.id?" armed":""}" data-act="liftdel" data-id="${e.id}" aria-label="${S.liftArm===e.id?"Tap again to remove":"Remove"}">${S.liftArm===e.id?"Remove?":"×"}</button></span></div>
+      <div class="liftgear">${gear}</div>
+      <div class="liftsel m-${m}">${measSelects("lift", P, e, true)}</div>
+      <p class="liftlast${cmp > 0 ? " up" : cmp < 0 ? " down" : ""}">${cmp > 0 ? "▲ Up from last time · " : cmp < 0 ? `▼ ${m === "lift" ? "Lighter" : "Less"} than last time · ` : ""}${lastTxt}${best[e.id] ? ` · Best ${bestText(e, best[e.id])}` : ""}</p>
       <div class="liftsave">${saved ? `<span class="liftok">✓ In ${dayWord === "today" ? "today's" : dayWord + "'s"} workout${same ? "" : " · changed since"}</span>` : ""}
         <button class="btn${saved && same ? " ghost" : ""} sm" data-act="liftone" data-id="${e.id}">${saved ? (same ? "Saved" : "Update") : `Save to ${dayWord === "today" ? "today" : dayWord}`}</button></div>
     </section>`;
   }).join("");
   const mins = S.liftMins || (target && target.mins) || 45, isToday = date === ymd(td);
-  /* chart: this split's total per session */
-  const spS = all.filter(x => x.ex.some(e => e.split === sp)).slice(0, 10).reverse(), spVol = x => liftVol(x.ex.filter(e => e.split === sp));
-  const chart = spS.length >= 2 ? `<div class="liftchart"><p class="lbl">${splitName(sp)} · total weight lifted per session</p>${columns(spS.map(spVol), spS.map(x => { const d = parseYmd(x.date); return `${d.getMonth()+1}/${d.getDate()}`; }), { label: "Total weight lifted per session", cur: spS.length - 1, fmt: v => v >= 1000 ? (v/1000).toFixed(v >= 10000 ? 0 : 1) + "k" : Math.round(v), tip: (i, v) => `${qDay(parseYmd(spS[i].date), td)} · ${Math.round(v).toLocaleString()} lb lifted · ${spS[i].ex.filter(e => e.split === sp).length} exercises` })}</div>` : "";
-  /* history: every saved workout, newest first, editable */
+  /* chart: upper/lower = total weight lifted per day; daily = items done per day */
+  const spS = all.filter(x => x.ex.some(e => e.split === sp)).slice(0, 10).reverse(), spVal = x => daily ? x.ex.filter(e => e.split === sp).length : liftVol(x.ex.filter(e => e.split === sp));
+  const chart = spS.length >= 2 ? `<div class="liftchart"><p class="lbl">${splitName(sp)} · ${daily ? "items done per day" : "total weight lifted per session"}</p>${columns(spS.map(spVal), spS.map(x => { const d = parseYmd(x.date); return `${d.getMonth()+1}/${d.getDate()}`; }), { label: daily ? "Daily items done per day" : "Total weight lifted per session", cur: spS.length - 1, fmt: v => daily ? Math.round(v) : v >= 1000 ? (v/1000).toFixed(v >= 10000 ? 0 : 1) + "k" : Math.round(v), tip: (i, v) => daily ? `${qDay(parseYmd(spS[i].date), td)} · ${v} of your daily items: ${spS[i].ex.filter(e => e.split === sp).map(e => e.name).join(", ")}` : `${qDay(parseYmd(spS[i].date), td)} · ${Math.round(v).toLocaleString()} lb lifted · ${spS[i].ex.filter(e => e.split === sp).length} exercises` })}</div>` : "";
+  /* history: every saved day, newest first, editable */
   const shown = all.slice(0, S.liftShow || 8);
   const hist = shown.map(x => {
-    const d = parseYmd(x.date), sps = [...new Set(x.ex.map(e => e.split))], k = x.key, open = S.liftOpen === x.date, docEx = (get(k).ex || []);
-    const rows = x.ex.map(e => { const n = docEx.findIndex(y => y && y.id === e.id), Q = `ex.${n}`; return `<div class="hrow">
-        <div class="hname">${I(k, `${Q}.name`, { label: "Exercise name" })}<span class="muted">${esc([splitName(e.split), e.equip, e.machine].filter(Boolean).join(" · "))}</span></div>
-        <select class="ln" id="${fid(k,`${Q}.w`)}" data-k="${k}" data-p="${Q}.w" data-num="1" aria-label="Weight">${optList(W_OPTS, e.w, fmtW)}</select>
-        <select class="ln" id="${fid(k,`${Q}.reps`)}" data-k="${k}" data-p="${Q}.reps" data-num="1" aria-label="Reps">${optList(Array.from({length:30},(_,i)=>i+1), e.reps, v => v + " reps")}</select>
-        <select class="ln" id="${fid(k,`${Q}.sets`)}" data-k="${k}" data-p="${Q}.sets" data-num="1" aria-label="Sets">${optList([1,2,3,4,5,6,7,8], e.sets, v => v + (v === 1 ? " set" : " sets"))}</select>
+    const d = parseYmd(x.date), sps = LIFT_SPLITS.map(s => s[0]).filter(s => x.ex.some(e => e.split === s)), k = x.key, open = S.liftOpen === x.date, docEx = (get(k).ex || []), vol = liftVol(x.ex);
+    const rows = x.ex.map(e => { const n = docEx.findIndex(y => y && y.id === e.id), Q = `ex.${n}`, m = measOf(e); return `<div class="hrow m-${m}">
+        <div class="hname">${I(k, `${Q}.name`, { label: "Name" })}<span class="muted">${esc([splitName(e.split), e.equip, e.machine].filter(Boolean).join(" · "))}</span></div>
+        ${measSelects(k, Q, e, false, true)}
         <button class="xb" data-act="lthdel" data-date="${x.date}" data-id="${esc(e.id)}" aria-label="Remove ${esc(e.name)} from this workout">×</button></div>`; }).join("");
-    return `<details class="hsess"${open ? " open" : ""} data-date="${x.date}"><summary><span class="mono">${DOW[dowIdx(d)]} ${MON3[d.getMonth()]} ${d.getDate()}</span><b>${sps.map(splitName).join(" & ")}</b><span class="muted">${x.ex.length} exercise${x.ex.length === 1 ? "" : "s"} · ${Math.round(liftVol(x.ex)).toLocaleString()} lb${x.mins ? " · " + x.mins + " min" : ""}</span></summary>
+    return `<details class="hsess"${open ? " open" : ""} data-date="${x.date}"><summary><span class="mono">${DOW[dowIdx(d)]} ${MON3[d.getMonth()]} ${d.getDate()}</span><b>${sps.map(splitName).join(" · ")}</b><span class="muted">${x.ex.length} item${x.ex.length === 1 ? "" : "s"}${vol ? " · " + Math.round(vol).toLocaleString() + " lb lifted" : ""}${x.mins ? " · " + x.mins + " min" : ""}</span></summary>
       <div class="hbody">${rows}
         <div class="hfoot"><label><span class="cap">Time</span><select class="ln" id="${fid(k,"mins")}" data-k="${k}" data-p="mins" aria-label="Workout length">${optList(Array.from({length:30},(_,i)=>(i+1)*5), x.mins || 45, v => v + " min")}</select></label>
-          <span class="grow"></span><button class="danger${S.liftDelS === x.date ? " armed" : ""}" data-act="lthsdel" data-date="${x.date}">${S.liftDelS === x.date ? "Tap again to delete" : "Delete this workout"}</button></div></div></details>`;
+          <span class="grow"></span><button class="danger${S.liftDelS === x.date ? " armed" : ""}" data-act="lthsdel" data-date="${x.date}">${S.liftDelS === x.date ? "Tap again to delete" : "Delete this day"}</button></div></div></details>`;
   }).join("");
-  return `<div class="liftbar"><div class="seg liftseg" role="group" aria-label="Workout" style="grid-template-columns:1fr 1fr">${LIFT_SPLITS.map(([id, l]) => `<button data-act="liftsplit" data-t="${id}" aria-pressed="${sp===id}">${l}</button>`).join("")}</div>
-      <p class="hint" style="margin:0">Your exercises, machines, weights and reps stay saved. Change them with the menus, then tap <b>Save</b> on each exercise as you finish it.</p></div>
-    <section class="liftlog"><div><p class="lbl" style="margin:0">${isToday ? "Today's workout" : `Workout for ${DOWL[dowIdx(dD)]}, ${MON3[dD.getMonth()]} ${dD.getDate()}`}</p>
-      <p class="hint" style="margin:4px 0 0">${target ? `${target.ex.length} exercise${target.ex.length === 1 ? "" : "s"} saved: ${esc(target.ex.map(e => e.name).join(", "))}` : "Nothing saved yet. Save exercises one at a time, or all of this list at once."}</p></div>
+  return `<div class="liftbar"><div class="seg liftseg" role="group" aria-label="Gym section" style="grid-template-columns:repeat(3,1fr)">${LIFT_SPLITS.map(([id, l]) => `<button data-act="liftsplit" data-t="${id}" aria-pressed="${sp===id}">${l}</button>`).join("")}</div>
+      <p class="hint" style="margin:0">${daily ? "Walking laps, stretches, sit-ups, sauna and anything else you do outside your upper and lower body workouts. Your settings stay saved." : "Your exercises, machines, weights and reps stay saved. Change them with the menus, then tap <b>Save</b> on each one as you finish it."}</p></div>
+    <section class="liftlog"><div><p class="lbl" style="margin:0">${isToday ? "Today's gym" : `Gym for ${DOWL[dowIdx(dD)]}, ${MON3[dD.getMonth()]} ${dD.getDate()}`}</p>
+      <p class="hint" style="margin:4px 0 0">${target ? `${target.ex.length} item${target.ex.length === 1 ? "" : "s"} saved: ${esc(target.ex.map(e => e.name).join(", "))}` : "Nothing saved yet. Save items one at a time, or this whole list at once."}</p></div>
       <label><span class="cap">Day</span><input class="ln" type="date" id="lift-date" value="${date}" max="${ymd(td)}"></label>
       <label><span class="cap">Time</span><select class="ln" id="lift-mins" aria-label="Workout length">${optList(Array.from({length:30},(_,i)=>(i+1)*5), mins, v => v + " min")}</select></label>
-      <button class="btn" data-act="liftlog">Save all ${sp === "upper" ? "upper" : "lower"} body</button></section>
-    <div class="lifts">${cards || `<div class="empty">No exercises yet.</div>`}</div>
-    <button class="btn ghost" data-act="liftadd" style="align-self:flex-start">Add exercise</button>
+      <button class="btn" data-act="liftlog">Save all ${daily ? "daily" : sp === "upper" ? "upper body" : "lower body"}</button></section>
+    <div class="lifts">${cards || `<div class="empty">Nothing here yet.</div>`}</div>
+    <button class="btn ghost" data-act="liftadd" style="align-self:flex-start">${daily ? "Add activity" : "Add exercise"}</button>
     ${chart}
-    <div><p class="lbl">Workout history</p>${hist ? `<div class="hlist2">${hist}</div>${all.length > shown.length ? `<button class="btn ghost" data-act="lthmore" style="margin-top:10px">Show older workouts</button>` : ""}<p class="hint">Open a workout to fix its weights, reps, sets or time. Changes here don't affect your saved exercises above.</p>` : `<div class="empty">Saved workouts will appear here.</div>`}</div>`;
+    <div><p class="lbl">Gym history</p>${hist ? `<div class="hlist2">${hist}</div>${all.length > shown.length ? `<button class="btn ghost" data-act="lthmore" style="margin-top:10px">Show older days</button>` : ""}<p class="hint">Open a day to fix its weights, reps, sets, laps, minutes or time. Changes here don't affect your saved lists above.</p>` : `<div class="empty">Saved days will appear here.</div>`}</div>`;
 }
 function liftLog(){
   const sp = liftSplit(), list = liftList(sp).filter(e => e.name && String(e.name).trim()), date = liftDate();
-  if(!list.length){ toast("Add an exercise first"); return; }
-  liftSave(list.map(e => ({ e, sp })), date); S.liftMins = null; render(); toast(`${splitName(sp)} saved to ${shortDate(parseYmd(date), todayDate())}'s workout`);
+  if(!list.length){ toast("Add something to the list first"); return; }
+  liftSave(list.map(e => ({ e, sp })), date); S.liftMins = null; render(); toast(`${splitName(sp)} saved to ${shortDate(parseYmd(date), todayDate())}'s gym`);
 }
 function vFitness(){
   const y = Y(), m = M(), k = "f"+mk(y,m), log = (get(k).log||[]).map((e,i)=>({...e,i}));
@@ -2658,7 +2694,7 @@ function vFitness(){
   }).join("");
   const h = Math.floor(mins/60), mm = Math.round(mins%60);
   return head(`Fitness · ${MONTHS[m]}`, `Log rides, runs, gym sessions and anything else that moves you`, monthChips()) +
-  `<div class="sec">${stStrip()}<div class="subnav seg fittabs" role="tablist" aria-label="Fitness views" style="grid-template-columns:repeat(4,1fr)">${[["overview","Overview"],["strength","Strength"],["log",`${MON3[m]} log`],["year","Year"]].map(([id,l]) => `<button role="tab" data-act="fittab" data-t="${id}" aria-pressed="${S.fitTab===id}" aria-selected="${S.fitTab===id}">${l}</button>`).join("")}</div>` +
+  `<div class="sec">${stStrip()}<div class="subnav seg fittabs" role="tablist" aria-label="Fitness views" style="grid-template-columns:repeat(4,1fr)">${[["overview","Overview"],["strength","Gym"],["log",`${MON3[m]} log`],["year","Year"]].map(([id,l]) => `<button role="tab" data-act="fittab" data-t="${id}" aria-pressed="${S.fitTab===id}" aria-selected="${S.fitTab===id}">${l}</button>`).join("")}</div>` +
   (S.fitTab === "overview" ? vFitDash() + `</div>` : S.fitTab === "strength" ? vStrength() + `</div>` : S.fitTab === "year" ? vFitYear() + `</div>` :
   `<form class="fform" id="fitform" autocomplete="off">
     <label><span>Date</span><input class="ln" type="date" id="fx-date" value="${ymd(S.day)}" min="${mk(y,m)}-01" max="${mk(y,m)}-${pad(dim(y,m))}"></label>
@@ -3465,7 +3501,7 @@ document.addEventListener("click", e => {
   else if(a==="pindel"){ const p0 = (get(blockKey()).pins || []).find(x => x && x.id === b.dataset.id); savePins(blockKey(), arr => arr.filter(x => x.id !== b.dataset.id)); S.pinSel = null; render(); if(p0) toast(`${DC[p0.s].l} sticker peeled off`); }
   else if(a==="daylay"){ edit("settings","dayLayout", dayLayout() === "two" ? "one" : "two"); render(); }
   else if(a==="liftsplit"){ edit("settings","liftSplit", b.dataset.t); S.liftArm = null; render(); }
-  else if(a==="liftadd"){ const sp = liftSplit(); liftList(sp); const doc = clone(get("lift")); doc[sp] = (doc[sp] || []).filter(Boolean); doc[sp].push({ id: newId(), name: "", equip: "Machine", machine: "", sets: 3, reps: 10, w: 0 }); put("lift", doc); render(); const ins = document.querySelectorAll('.lift .lifthead input'); if(ins.length) ins[ins.length-1].focus(); }
+  else if(a==="liftadd"){ const sp = liftSplit(); liftList(sp); const doc = clone(get("lift")); doc[sp] = (doc[sp] || []).filter(Boolean); doc[sp].push(sp === "daily" ? { id: newId(), name: "", equip: "", machine: "", m: "min", sets: 3, reps: 10, w: 0, n: 10, t: 10 } : { id: newId(), name: "", equip: "Machine", machine: "", m: "lift", sets: 3, reps: 10, w: 0 }); put("lift", doc); render(); const ins = document.querySelectorAll('.lift .lifthead input'); if(ins.length) ins[ins.length-1].focus(); }
   else if(a==="liftmv"){ const sp = liftSplit(), doc = clone(get("lift")), arr = doc[sp] || [], i = +b.dataset.i, j = i + +b.dataset.d; if(arr[i] && j >= 0 && j < arr.length){ [arr[i], arr[j]] = [arr[j], arr[i]]; put("lift", doc); render(); const nb = document.querySelector(`[data-act="liftmv"][data-i="${j}"][data-d="${b.dataset.d}"]`); if(nb && !nb.disabled) nb.focus(); } }
   else if(a==="liftdel"){ if(S.liftArm === b.dataset.id){ const sp = liftSplit(), doc = clone(get("lift")); doc[sp] = (doc[sp] || []).filter(e => e && e.id !== b.dataset.id); put("lift", doc); S.liftArm = null; render(); toast("Exercise removed. Past sessions keep their records."); } else { S.liftArm = b.dataset.id; render(); setTimeout(() => { if(S.liftArm === b.dataset.id){ S.liftArm = null; if(!editing()) render(); } }, 4000); } }
   else if(a==="liftlog"){ liftLog(); }

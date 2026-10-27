@@ -2,6 +2,14 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v2.9 · 2026-10-27
+
+- The Fitness page's **Strength** tab is now called **Gym**, with three sections: **Upper body**, **Lower body** and **Daily**.
+- **Daily** is for things outside your upper and lower body workouts. It starts with walking laps, stretching, sit-ups and sauna, and you can add your own.
+  - Each item is tracked by **laps**, **minutes**, or **reps & sets**, picked from a menu, with a notes field (for example "indoor track, 8 laps = 1 mi").
+  - Items save to the day the same way as exercises, show last time and your best, and can be edited in the history.
+- Gym history shows everything saved for a day across all three sections. The fitness log entry reads like "Gym · Upper body & Daily · 5 items". A day with only Daily items is logged as Mobility.
+
 ## v2.8 · 2026-10-27
 
 - **Save each exercise as you go.** Every exercise card has its own **Save to today** button that adds that machine or exercise, with its current weight, reps and sets, to the day's workout. A saved card shows ✓ and turns to **Update** if you change it afterward. **Save all** still saves the whole list at once.
