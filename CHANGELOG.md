@@ -2,6 +2,14 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v2.8 · 2026-10-27
+
+- **Save each exercise as you go.** Every exercise card has its own **Save to today** button that adds that machine or exercise, with its current weight, reps and sets, to the day's workout. A saved card shows ✓ and turns to **Update** if you change it afterward. **Save all** still saves the whole list at once.
+- Upper and lower body exercises can go into the same day's workout. The fitness log shows one Strength entry per day, such as "Upper & lower body · 5 exercises".
+- **Pick the day** to save to, so you can add a workout you forgot to log.
+- **Workout history you can edit.** Open any past workout to change its weights, reps, sets, exercise names or time, remove an exercise, or delete the whole workout. The fitness log updates to match. Editing history never changes your saved exercises.
+- "Last time" now looks for the last workout that included that exercise, not just the last upper or lower body day.
+
 ## v2.7 · 2026-10-27
 
 - **New Strength tab on the Fitness page** with an **Upper body / Lower body** switch.
