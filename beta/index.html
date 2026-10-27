@@ -228,6 +228,29 @@ button.ti.ta{border:0;border-left:3px solid #FC4C02;text-align:left;font:inherit
 .connlink b{display:block;font-size:14.5px} .connlink small{color:var(--muted);font-size:12.5px}
 .connlink > span:nth-child(2){flex:1}
 .connlink .lights{display:flex;gap:4px}
+.liftbar{display:flex;flex-direction:column;gap:8px}
+.liftseg{max-width:420px}
+.liftseg button{font-size:15px;padding:10px 0}
+.lifts{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:14px}
+.lift{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--paper)}
+.lifthead{display:flex;align-items:center;gap:8px}
+.lifthead .ln{flex:1;font-weight:700;font-size:16px;min-width:0}
+.liftn{font:400 22px/1 var(--serif);color:var(--accent);min-width:18px}
+.liftmv{display:flex;gap:4px;align-items:center}
+.liftmv .iconb{width:30px;height:30px;font-size:14px}
+.liftmv .iconb:disabled{opacity:.3}
+.xb.armed{width:auto;padding:0 8px;color:var(--bad);font-weight:700;font-size:12.5px}
+.liftgear{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:10px}
+.liftgear label,.liftsel label,.liftlog label{display:flex;flex-direction:column;gap:2px;min-width:0}
+.liftsel{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr);gap:10px;padding:10px;border-radius:10px;background:color-mix(in srgb, var(--sec) 12%, transparent)}
+.ln.big{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;min-height:40px}
+.liftlast{margin:0;font-size:12.5px;color:var(--muted)}
+.liftlast.up{color:var(--good);font-weight:600}
+.liftlast.down{color:var(--bad)}
+.liftlog{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 16px;padding:14px 16px;border-radius:14px;border:1px dashed var(--line);background:color-mix(in srgb, var(--sec) 7%, var(--paper))}
+.liftlog > div{flex:1 1 260px}
+.liftchart{max-width:680px}
+.liftlog select{min-width:110px}
 .ststrip{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--paper)}
 .ststrip .grow{flex:1}
 .btn.sm{padding:6px 12px;font-size:13px;min-height:34px}
@@ -1079,7 +1102,7 @@ function migrateSched(){
 migrateSched();
 
 /* ---------- state ---------- */
-const S = { pinSel: null, blkNew: null, fitTab: "overview", wk: null, wkDelArm: false, wkFrom: null, bkDays: null, bkScope: null, bkUntil: null, pickBlock: null, blkEdit: null, rzArm: false, rzKeep: true, rzText: "", day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "auto" };
+const S = { liftArm: null, liftMins: null, pinSel: null, blkNew: null, fitTab: ["overview","strength","log","year"].includes(lastSub.fitTab) ? lastSub.fitTab : "overview", wk: null, wkDelArm: false, wkFrom: null, bkDays: null, bkScope: null, bkUntil: null, pickBlock: null, blkEdit: null, rzArm: false, rzKeep: true, rzText: "", day: todayDate(), view: "home", noteType: "all", noteId: null, delArm: null, menu: false, sheet: null, famWho: "all", qTarget: "auto" };
 
 const FB_CONFIG = null;   /* paste the Firebase web config object here */
 const FBV = "10.14.1";
@@ -2488,6 +2511,75 @@ function vFitYear(){
   </section>`;
 }
 
+/* ---------- Strength: saved upper/lower routines (doc "lift") and logged sessions (doc "lt"+date) ---------- */
+const LIFT_SPLITS = [["upper","Upper body"],["lower","Lower body"]];
+const EQUIP = ["Machine","Cable","Dumbbells","Barbell","Smith machine","Kettlebell","Bodyweight","Bands","Other"];
+const W_OPTS = [0, ...Array.from({length:20}, (_, i) => (i+1)*2.5), ...Array.from({length:90}, (_, i) => 55 + i*5)];
+const LIFT_START = {
+  upper: [["Chest press","Machine"],["Lat pulldown","Cable"],["Seated row","Machine"],["Shoulder press","Dumbbells"],["Biceps curl","Dumbbells"],["Triceps pushdown","Cable"]],
+  lower: [["Leg press","Machine"],["Leg extension","Machine"],["Seated leg curl","Machine"],["Goblet squat","Kettlebell"],["Calf raise","Machine"],["Hip abductor","Machine"]]
+};
+const fmtW = w => +w ? `${+w % 1 ? (+w).toFixed(1) : +w} lb` : "Body wt";
+function liftSplit(){ const v = get("settings").liftSplit; return LIFT_SPLITS.some(x => x[0] === v) ? v : "upper"; }
+function liftList(sp){
+  const doc = get("lift");
+  if(!Array.isArray(doc[sp])){ const nd = clone(doc); nd[sp] = LIFT_START[sp].map(([name, equip]) => ({ id: newId(), name, equip, machine: "", sets: 3, reps: 10, w: 0 })); put("lift", nd); return nd[sp]; }
+  return doc[sp].filter(Boolean);
+}
+function liftSessions(sp){
+  return [...store.entries()].filter(([k, v]) => k.startsWith("lt") && v && v.split === sp && Array.isArray(v.ex)).map(([k, v]) => ({ date: k.slice(2), ...v })).sort((a, b) => b.date.localeCompare(a.date));
+}
+const optList = (vals, cur, fmt) => vals.map(v => `<option value="${v}"${+cur === +v ? " selected" : ""}>${fmt(v)}</option>`).join("");
+function vStrength(){
+  const sp = liftSplit(), list = liftList(sp), td = todayDate(), tk = ymd(td), sess = liftSessions(sp);
+  const prev = sess.find(x => x.date < tk) || null, todays = sess.find(x => x.date === tk) || null;
+  const best = {}; sess.forEach(x => x.ex.forEach(e => { if(+e.w > (best[e.id] || 0)) best[e.id] = +e.w; }));
+  const idx = i => (get("lift")[sp] || []).indexOf(list[i]);
+  const cards = list.map((e, i) => {
+    const j = idx(i), P = `${sp}.${j}`, last = prev && prev.ex.find(x => x.id === e.id);
+    const up = last && (+e.w > +last.w || (+e.w === +last.w && +e.reps > +last.reps) || (+e.w === +last.w && +e.reps === +last.reps && +e.sets > +last.sets));
+    const down = last && !up && (+e.w < +last.w || (+e.w === +last.w && +e.reps < +last.reps));
+    const lastTxt = last ? `Last time (${MON3[parseYmd(prev.date).getMonth()]} ${parseYmd(prev.date).getDate()}): ${last.sets} × ${last.reps} at ${fmtW(last.w)}` : "Not logged yet";
+    return `<section class="lift">
+      <div class="lifthead"><b class="liftn">${i+1}</b>${I("lift", `${P}.name`, { ph: "Exercise", label: `Exercise ${i+1} name` })}
+        <span class="liftmv"><button class="iconb" data-act="liftmv" data-i="${j}" data-d="-1" aria-label="Move up"${i===0?" disabled":""}>↑</button><button class="iconb" data-act="liftmv" data-i="${j}" data-d="1" aria-label="Move down"${i===list.length-1?" disabled":""}>↓</button>
+        <button class="xb${S.liftArm===e.id?" armed":""}" data-act="liftdel" data-id="${e.id}" aria-label="${S.liftArm===e.id?"Tap again to remove":"Remove exercise"}">${S.liftArm===e.id?"Remove?":"×"}</button></span></div>
+      <div class="liftgear"><label><span class="cap">Equipment</span><select class="ln" id="${fid("lift",`${P}.equip`)}" data-k="lift" data-p="${P}.equip" aria-label="Equipment">${EQUIP.map(x => `<option${x===e.equip?" selected":""}>${x}</option>`).join("")}</select></label>
+        <label><span class="cap">Machine or station</span>${I("lift", `${P}.machine`, { ph: "e.g. Life Fitness, seat 4", label: "Machine or station" })}</label></div>
+      <div class="liftsel">
+        <label><span class="cap">Weight</span><select class="ln big" id="${fid("lift",`${P}.w`)}" data-k="lift" data-p="${P}.w" data-num="1" aria-label="${esc(e.name||"Exercise")} weight">${optList(W_OPTS, e.w, fmtW)}</select></label>
+        <label><span class="cap">Reps</span><select class="ln big" id="${fid("lift",`${P}.reps`)}" data-k="lift" data-p="${P}.reps" data-num="1" aria-label="${esc(e.name||"Exercise")} reps">${optList(Array.from({length:30},(_,i)=>i+1), e.reps, v => v)}</select></label>
+        <label><span class="cap">Sets</span><select class="ln big" id="${fid("lift",`${P}.sets`)}" data-k="lift" data-p="${P}.sets" data-num="1" aria-label="${esc(e.name||"Exercise")} sets">${optList([1,2,3,4,5,6,7,8], e.sets, v => v)}</select></label>
+      </div>
+      <p class="liftlast${up?" up":down?" down":""}">${up ? "▲ Up from last time · " : down ? "▼ Lighter than last time · " : ""}${lastTxt}${best[e.id] ? ` · Best ${fmtW(best[e.id])}` : ""}</p>
+    </section>`;
+  }).join("");
+  const vol = x => x.ex.reduce((a, e) => a + (+e.sets||0) * (+e.reps||0) * (+e.w||0), 0);
+  const hist = sess.slice(0, 10).reverse();
+  const chart = hist.length >= 2 ? `<div class="liftchart"><p class="lbl">Total weight lifted per session</p>${columns(hist.map(vol), hist.map(x => { const d = parseYmd(x.date); return `${d.getMonth()+1}/${d.getDate()}`; }), { label: "Total weight lifted per session", cur: hist.length - 1, fmt: v => v >= 1000 ? (v/1000).toFixed(v >= 10000 ? 0 : 1) + "k" : Math.round(v), tip: (i, v) => `${qDay(parseYmd(hist[i].date), td)} · ${Math.round(v).toLocaleString()} lb lifted · ${hist[i].ex.length} exercises${hist[i].mins ? " · " + hist[i].mins + " min" : ""}` })}</div>` : "";
+  const rows = sess.slice(0, 8).map(x => { const d = parseYmd(x.date); return `<tr><td class="mono">${DOW[dowIdx(d)]} ${MON3[d.getMonth()]} ${d.getDate()}</td><td>${x.ex.length} exercises</td><td class="mono">${Math.round(vol(x)).toLocaleString()} lb</td><td class="mono">${x.mins ? x.mins + " min" : ""}</td></tr>`; }).join("");
+  const mins = S.liftMins || (todays && todays.mins) || 45;
+  return `<div class="liftbar"><div class="seg liftseg" role="group" aria-label="Workout" style="grid-template-columns:1fr 1fr">${LIFT_SPLITS.map(([id, l]) => `<button data-act="liftsplit" data-t="${id}" aria-pressed="${sp===id}">${l}</button>`).join("")}</div>
+      <p class="hint" style="margin:0">Your exercises, machines, weights and reps are saved. Change them with the menus as you get stronger.</p></div>
+    <div class="lifts">${cards || `<div class="empty">No exercises yet.</div>`}</div>
+    <button class="btn ghost" data-act="liftadd" style="align-self:flex-start">Add exercise</button>
+    <section class="liftlog"><div><p class="lbl" style="margin:0">Log today's ${sp === "upper" ? "upper body" : "lower body"} workout</p>
+      <p class="hint" style="margin:4px 0 0">${todays ? `Logged today at these settings. Save again if you changed anything.` : "Saves today's weights and reps to your history and adds a Strength workout to your fitness log."}</p></div>
+      <label><span class="cap">Time</span><select class="ln" id="lift-mins" aria-label="Workout length">${optList(Array.from({length:30},(_,i)=>(i+1)*5), mins, v => v + " min")}</select></label>
+      <button class="btn" data-act="liftlog">${todays ? "Update today's log" : "Save workout"}</button></section>
+    ${chart}
+    ${rows ? `<div><p class="lbl">Recent ${sp === "upper" ? "upper body" : "lower body"} sessions</p><div class="tblwrap"><table class="ftbl"><thead><tr><th>Date</th><th>Exercises</th><th>Lifted</th><th>Time</th></tr></thead><tbody>${rows}</tbody></table></div></div>` : ""}`;
+}
+function liftLog(){
+  const sp = liftSplit(), list = liftList(sp).filter(e => e.name && String(e.name).trim()), td = todayDate(), date = ymd(td);
+  const sel = document.getElementById("lift-mins"), mins = sel ? String(sel.value) : "45";
+  if(!list.length){ toast("Add an exercise first"); return; }
+  put("lt" + date, { split: sp, mins, ex: list.map(e => ({ id: e.id, name: e.name, equip: e.equip || "", machine: e.machine || "", sets: +e.sets || 0, reps: +e.reps || 0, w: +e.w || 0 })), saved: Date.now() });
+  const k = "f" + mk(td.getFullYear(), td.getMonth()), doc = clone(get(k)); doc.log = (doc.log || []).filter(Boolean);
+  const label = sp === "upper" ? "Upper body" : "Lower body", ex = doc.log.find(e => e.lift === sp && e.date === date);
+  if(ex){ ex.mins = mins; ex.notes = label; } else doc.log.push({ date, type: "Strength", mins, dist: "", notes: label, lift: sp });
+  put(k, doc); S.liftMins = null; render(); toast(`${label} workout saved`);
+}
 function vFitness(){
   const y = Y(), m = M(), k = "f"+mk(y,m), log = (get(k).log||[]).map((e,i)=>({...e,i}));
   const mins = log.reduce((a,e)=>a+num(e.mins),0), miles = log.reduce((a,e)=>a+num(e.dist),0);
@@ -2503,8 +2595,8 @@ function vFitness(){
   }).join("");
   const h = Math.floor(mins/60), mm = Math.round(mins%60);
   return head(`Fitness · ${MONTHS[m]}`, `Log rides, runs, gym sessions and anything else that moves you`, monthChips()) +
-  `<div class="sec">${stStrip()}<div class="subnav seg fittabs" role="tablist" aria-label="Fitness views" style="grid-template-columns:repeat(3,1fr)">${[["overview","Overview"],["log",`${MON3[m]} log`],["year","Year"]].map(([id,l]) => `<button role="tab" data-act="fittab" data-t="${id}" aria-pressed="${S.fitTab===id}" aria-selected="${S.fitTab===id}">${l}</button>`).join("")}</div>` +
-  (S.fitTab === "overview" ? vFitDash() + `</div>` : S.fitTab === "year" ? vFitYear() + `</div>` :
+  `<div class="sec">${stStrip()}<div class="subnav seg fittabs" role="tablist" aria-label="Fitness views" style="grid-template-columns:repeat(4,1fr)">${[["overview","Overview"],["strength","Strength"],["log",`${MON3[m]} log`],["year","Year"]].map(([id,l]) => `<button role="tab" data-act="fittab" data-t="${id}" aria-pressed="${S.fitTab===id}" aria-selected="${S.fitTab===id}">${l}</button>`).join("")}</div>` +
+  (S.fitTab === "overview" ? vFitDash() + `</div>` : S.fitTab === "strength" ? vStrength() + `</div>` : S.fitTab === "year" ? vFitYear() + `</div>` :
   `<form class="fform" id="fitform" autocomplete="off">
     <label><span>Date</span><input class="ln" type="date" id="fx-date" value="${ymd(S.day)}" min="${mk(y,m)}-01" max="${mk(y,m)}-${pad(dim(y,m))}"></label>
     <label><span>Type</span><select class="ln" id="fx-type">${FIT_TYPES.map(t=>`<option>${t}</option>`).join("")}</select></label>
@@ -2806,8 +2898,10 @@ const editing = () => { const a = document.activeElement; return !!(a && main.co
 function onField(e){
   const el = e.target; if(!el.dataset || !el.dataset.k) return;
   const v = el.type==="checkbox" ? el.checked : el.dataset.num ? Number(el.value) : el.value;
-  if(val(el.dataset.k, el.dataset.p) === v) return;
+  const liftSel = S.view==="fitness" && el.dataset.k==="lift" && el.tagName==="SELECT";
+  if(val(el.dataset.k, el.dataset.p) === v){ if(liftSel && e.type==="change"){ const id = el.id; render(); const ne = document.getElementById(id); if(ne) ne.focus(); } return; }
   edit(el.dataset.k, el.dataset.p, v);
+  if(liftSel){ const id = el.id; render(); const ne = document.getElementById(id); if(ne) ne.focus(); }
   if(el.dataset.out){ const o = document.getElementById(el.dataset.out); if(o) o.textContent = v + "%"; }
   if(el.type==="checkbox"){ const row = el.closest(".row"); if(row && /\.done$/.test(el.dataset.p)) row.classList.toggle("done", el.checked); }
   if(S.view==="budget") paintBudget();
@@ -2824,7 +2918,7 @@ drawerEl.addEventListener("input", e => {
   if(e.target.id==="rz-type"){ S.rzText = e.target.value; const g = document.getElementById("rz-go"); if(g) g.disabled = S.rzText.trim().toUpperCase()!=="RESET"; }
 });
 drawerEl.addEventListener("change", e => { if(e.target.id==="rz-keep") S.rzKeep = e.target.checked; });
-main.addEventListener("change", e => { if(e.target.id==="fit-goal"){ const v = Math.max(0.5, Math.min(40, num(e.target.value) || 5)); edit("settings", "fitGoalHrs", v); render(); } });
+main.addEventListener("change", e => { if(e.target.id==="lift-mins"){ S.liftMins = e.target.value; return; } if(e.target.id==="fit-goal"){ const v = Math.max(0.5, Math.min(40, num(e.target.value) || 5)); edit("settings", "fitGoalHrs", v); render(); } });
 main.addEventListener("input", e => { if(e.target.id==="st-id"){ ST.cfg.clientId = e.target.value.trim(); stSave(); } else if(e.target.id==="st-secret"){ ST.cfg.clientSecret = e.target.value.trim(); stSave(); } });
 drawerEl.addEventListener("change", e => { if(e.target.id==="logo-file"){ handleLogo(e.target.files && e.target.files[0]); e.target.value = ""; } });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && (S.menu || S.sheet)) closeMenu(); });
@@ -3305,7 +3399,12 @@ document.addEventListener("click", e => {
   else if(a==="more"){ openSheet("more"); }
   else if(a==="pindel"){ const p0 = (get(blockKey()).pins || []).find(x => x && x.id === b.dataset.id); savePins(blockKey(), arr => arr.filter(x => x.id !== b.dataset.id)); S.pinSel = null; render(); if(p0) toast(`${DC[p0.s].l} sticker peeled off`); }
   else if(a==="daylay"){ edit("settings","dayLayout", dayLayout() === "two" ? "one" : "two"); render(); }
-  else if(a==="fittab"){ S.fitTab = b.dataset.t; render(); }
+  else if(a==="liftsplit"){ edit("settings","liftSplit", b.dataset.t); S.liftArm = null; render(); }
+  else if(a==="liftadd"){ const sp = liftSplit(); liftList(sp); const doc = clone(get("lift")); doc[sp] = (doc[sp] || []).filter(Boolean); doc[sp].push({ id: newId(), name: "", equip: "Machine", machine: "", sets: 3, reps: 10, w: 0 }); put("lift", doc); render(); const ins = document.querySelectorAll('.lift .lifthead input'); if(ins.length) ins[ins.length-1].focus(); }
+  else if(a==="liftmv"){ const sp = liftSplit(), doc = clone(get("lift")), arr = doc[sp] || [], i = +b.dataset.i, j = i + +b.dataset.d; if(arr[i] && j >= 0 && j < arr.length){ [arr[i], arr[j]] = [arr[j], arr[i]]; put("lift", doc); render(); const nb = document.querySelector(`[data-act="liftmv"][data-i="${j}"][data-d="${b.dataset.d}"]`); if(nb && !nb.disabled) nb.focus(); } }
+  else if(a==="liftdel"){ if(S.liftArm === b.dataset.id){ const sp = liftSplit(), doc = clone(get("lift")); doc[sp] = (doc[sp] || []).filter(e => e && e.id !== b.dataset.id); put("lift", doc); S.liftArm = null; render(); toast("Exercise removed. Past sessions keep their records."); } else { S.liftArm = b.dataset.id; render(); setTimeout(() => { if(S.liftArm === b.dataset.id){ S.liftArm = null; if(!editing()) render(); } }, 4000); } }
+  else if(a==="liftlog"){ liftLog(); }
+  else if(a==="fittab"){ S.fitTab = b.dataset.t; lastSub.fitTab = S.fitTab; try { localStorage.setItem("daybook-lastsub", JSON.stringify(lastSub)); } catch(e) {} render(); }
   else if(a==="qadd"){ openSheet("qadd"); }
   else if(a==="qtarget"){ S.qTarget = b.dataset.t; document.querySelectorAll('#qadd [data-act="qtarget"]').forEach(x => x.setAttribute("aria-pressed", String(x===b))); const pv = document.getElementById("q-prev"), qt = document.getElementById("q-text"); if(pv){ pv.hidden = S.qTarget !== "auto"; pv.innerHTML = qPreview(qt ? qt.value : ""); } if(qt){ qt.placeholder = S.qTarget==="auto" ? "gym tomorrow 6am · dentist Oct 30 2:30 · call Mike friday" : "Jot it down. One item per line."; qt.focus(); } }
   else if(a==="gconnect"){ gConnect(); }

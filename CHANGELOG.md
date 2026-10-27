@@ -2,6 +2,16 @@
 
 Each version is kept at `versions/<version>/` and tagged in git. The site root always serves the latest version.
 
+## v2.7 · 2026-10-27
+
+- **New Strength tab on the Fitness page** with an **Upper body / Lower body** switch.
+  - Each exercise saves its name, equipment (machine, cable, dumbbells, barbell and more), the machine or station, and your weight, reps and sets. Everything stays saved until you change it.
+  - Weight, reps and sets are drop-down menus, so going up is one tap. Weight goes from body weight to 500 lb (2.5 lb steps to 50 lb, then 5 lb steps).
+  - Each exercise shows what you did last time and your best weight, and marks it ▲ when you've gone up.
+  - Starts with six common machine and free-weight exercises for each, which you can rename, reorder, remove or add to.
+  - **Save workout** records today's weights and reps in your history and adds a Strength workout to your fitness log. A chart shows the total weight lifted per session, with a list of recent sessions.
+- The Fitness page remembers which tab you were on.
+
 ## v2.6 · 2026-10-26
 
 - **Drag-and-drop stickers on the Day page.** A sticker sheet with 18 stickers (star, heart, sunshine, rainbow, flower, coffee, energy, trophy, gym day, ride, good night, happy, done, Yay!, water, grow, pumpkin and gift).
